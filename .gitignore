@@ -92,3 +92,5 @@ tmp/
 temp/
 *.tmp
 *.temp
+terraform/tfplan
+*.tfplan
