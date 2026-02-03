@@ -1,0 +1,44 @@
+{
+  "name": "voice-agent-content-filter",
+  "description": "Content filtering policy for voice agent responses",
+  "filters": [
+    {
+      "type": "HATE",
+      "inputStrength": "HIGH",
+      "outputStrength": "HIGH",
+      "description": "Block hate speech and discriminatory content"
+    },
+    {
+      "type": "VIOLENCE",
+      "inputStrength": "HIGH",
+      "outputStrength": "HIGH",
+      "description": "Block violent content and threats"
+    },
+    {
+      "type": "SEXUAL",
+      "inputStrength": "HIGH",
+      "outputStrength": "HIGH",
+      "description": "Block sexual and adult content"
+    },
+    {
+      "type": "INSULTS",
+      "inputStrength": "MEDIUM",
+      "outputStrength": "MEDIUM",
+      "description": "Filter insulting language while allowing professional discourse"
+    },
+    {
+      "type": "MISCONDUCT",
+      "inputStrength": "MEDIUM",
+      "outputStrength": "MEDIUM",
+      "description": "Block content related to illegal activities"
+    },
+    {
+      "type": "PROMPT_ATTACK",
+      "inputStrength": "HIGH",
+      "outputStrength": "NONE",
+      "description": "Detect and block prompt injection attempts"
+    }
+  ],
+  "blockedInputMessage": "I cannot process that request. Please let me know how I can help you today.",
+  "blockedOutputMessage": "I cannot provide that information. Is there something else I can help you with?"
+}

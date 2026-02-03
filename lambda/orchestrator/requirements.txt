@@ -1,0 +1,29 @@
+# AWS Voice Agent - Lambda Orchestrator Dependencies
+
+# AWS SDK
+boto3>=1.34.0
+botocore>=1.34.0
+
+# Neptune/Gremlin (optional, for Phase 2)
+gremlin-python>=3.7.0
+aiohappyeyeballs>=2.0.0
+aiohttp>=3.9.0
+
+# Utilities
+python-dateutil>=2.8.0
+requests>=2.31.0
+
+# JSON handling
+orjson>=3.9.0
+
+# Async support
+asyncio-throttle>=1.0.0
+
+# Metrics and monitoring
+aws-xray-sdk>=2.12.0
+
+# Testing (dev only)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+moto>=4.2.0
