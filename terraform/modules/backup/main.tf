@@ -48,15 +48,14 @@ resource "aws_backup_plan" "main" {
     })
   }
 
-  # Weekly backup
+  # Weekly backup (no cold storage since retention < 90 days from cold storage threshold)
   rule {
     rule_name         = "weekly-backup"
     target_vault_name = aws_backup_vault.main.name
     schedule          = "cron(0 5 ? * SUN *)"  # Every Sunday at 5 AM UTC
 
     lifecycle {
-      delete_after       = var.weekly_backup_retention_days
-      cold_storage_after = var.cold_storage_after_days
+      delete_after = var.weekly_backup_retention_days
     }
 
     recovery_point_tags = merge(var.common_tags, {
@@ -266,7 +265,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "backup" {
 # -----------------------------------------------------------------------------
 
 resource "aws_sns_topic" "backup_notifications" {
-  count = var.sns_topic_arn == null ? 1 : 0
+  count = var.create_sns_topic ? 1 : 0
 
   name              = "${var.name_prefix}-backup-notifications"
   kms_master_key_id = var.kms_key_arn
@@ -274,15 +273,21 @@ resource "aws_sns_topic" "backup_notifications" {
   tags = var.common_tags
 }
 
+locals {
+  notification_topic_arn = var.create_sns_topic ? aws_sns_topic.backup_notifications[0].arn : var.sns_topic_arn
+}
+
 resource "aws_backup_vault_notifications" "main" {
+  count = var.enable_notifications ? 1 : 0
+
   backup_vault_name   = aws_backup_vault.main.name
-  sns_topic_arn       = var.sns_topic_arn != null ? var.sns_topic_arn : aws_sns_topic.backup_notifications[0].arn
+  sns_topic_arn       = local.notification_topic_arn
   backup_vault_events = ["BACKUP_JOB_FAILED", "RESTORE_JOB_COMPLETED", "BACKUP_JOB_COMPLETED"]
 }
 
 # SNS topic policy
 resource "aws_sns_topic_policy" "backup" {
-  count = var.sns_topic_arn == null ? 1 : 0
+  count = var.create_sns_topic ? 1 : 0
 
   arn = aws_sns_topic.backup_notifications[0].arn
 

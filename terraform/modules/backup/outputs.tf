@@ -39,5 +39,5 @@ output "backup_bucket_arn" {
 
 output "notification_topic_arn" {
   description = "ARN of backup notification SNS topic"
-  value       = var.sns_topic_arn != null ? var.sns_topic_arn : aws_sns_topic.backup_notifications[0].arn
+  value       = local.notification_topic_arn
 }

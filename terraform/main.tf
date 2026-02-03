@@ -351,20 +351,21 @@ module "security" {
   source = "./modules/security"
   count  = var.production_config.enable_security_services ? 1 : 0
 
-  name_prefix          = local.name_prefix
-  environment          = var.environment
-  random_suffix        = random_id.suffix.hex
-  vpc_id               = module.vpc.vpc_id
-  kms_key_arn          = module.kms.key_arns["cloudwatch"]
-  sns_topic_arn        = var.production_config.enable_alerting ? module.alerting[0].critical_topic_arn : null
-  log_retention_days   = var.cloudwatch_config.log_retention_days
-  enable_vpc_flow_logs = var.production_config.enable_vpc_flow_logs
-  enable_guardduty     = var.production_config.enable_guardduty
-  enable_security_hub  = var.production_config.enable_security_hub
-  enable_aws_config    = var.production_config.enable_aws_config
-  common_tags          = local.common_tags
+  name_prefix              = local.name_prefix
+  environment              = var.environment
+  random_suffix            = random_id.suffix.hex
+  vpc_id                   = module.vpc.vpc_id
+  kms_key_arn              = module.kms.key_arns["cloudwatch"]
+  sns_topic_arn            = var.production_config.enable_alerting ? module.alerting[0].critical_topic_arn : null
+  enable_sns_notifications = var.production_config.enable_alerting
+  log_retention_days       = var.cloudwatch_config.log_retention_days
+  enable_vpc_flow_logs     = var.production_config.enable_vpc_flow_logs
+  enable_guardduty         = var.production_config.enable_guardduty
+  enable_security_hub      = var.production_config.enable_security_hub
+  enable_aws_config        = var.production_config.enable_aws_config
+  common_tags              = local.common_tags
 
-  depends_on = [module.vpc, module.kms]
+  depends_on = [module.vpc, module.kms, module.alerting]
 }
 
 # -----------------------------------------------------------------------------
@@ -398,11 +399,13 @@ module "backup" {
   source = "./modules/backup"
   count  = var.production_config.enable_backup ? 1 : 0
 
-  name_prefix        = local.name_prefix
-  environment        = var.environment
-  random_suffix      = random_id.suffix.hex
-  kms_key_arn        = module.kms.key_arns["s3"]
-  sns_topic_arn      = var.production_config.enable_alerting ? module.alerting[0].warning_topic_arn : null
+  name_prefix      = local.name_prefix
+  environment      = var.environment
+  random_suffix    = random_id.suffix.hex
+  kms_key_arn      = module.kms.key_arns["s3"]
+  sns_topic_arn        = var.production_config.enable_alerting ? module.alerting[0].warning_topic_arn : null
+  create_sns_topic     = !var.production_config.enable_alerting
+  enable_notifications = true
 
   daily_backup_retention_days   = var.production_config.daily_backup_retention_days
   weekly_backup_retention_days  = var.production_config.weekly_backup_retention_days

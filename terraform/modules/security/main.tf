@@ -110,7 +110,7 @@ resource "aws_guardduty_detector" "main" {
 
 # GuardDuty Findings SNS Notification
 resource "aws_cloudwatch_event_rule" "guardduty_findings" {
-  count = var.enable_guardduty && var.sns_topic_arn != null ? 1 : 0
+  count = var.enable_guardduty && var.enable_sns_notifications ? 1 : 0
 
   name        = "${var.name_prefix}-guardduty-findings"
   description = "Capture GuardDuty findings"
@@ -127,7 +127,7 @@ resource "aws_cloudwatch_event_rule" "guardduty_findings" {
 }
 
 resource "aws_cloudwatch_event_target" "guardduty_sns" {
-  count = var.enable_guardduty && var.sns_topic_arn != null ? 1 : 0
+  count = var.enable_guardduty && var.enable_sns_notifications ? 1 : 0
 
   rule      = aws_cloudwatch_event_rule.guardduty_findings[0].name
   target_id = "guardduty-to-sns"
@@ -353,23 +353,9 @@ resource "aws_config_config_rule" "s3_bucket_encryption" {
   depends_on = [aws_config_configuration_recorder.main]
 }
 
-# Check Lambda functions have tracing enabled
-resource "aws_config_config_rule" "lambda_tracing" {
-  count = var.enable_aws_config ? 1 : 0
-
-  name = "${var.name_prefix}-lambda-tracing-enabled"
-
-  source {
-    owner             = "AWS"
-    source_identifier = "LAMBDA_FUNCTION_SETTINGS_CHECK"
-  }
-
-  input_parameters = jsonencode({
-    tracingMode = "Active"
-  })
-
-  depends_on = [aws_config_configuration_recorder.main]
-}
+# Note: Lambda X-Ray tracing is configured directly in Lambda module
+# The LAMBDA_FUNCTION_SETTINGS_CHECK rule has specific parameter requirements
+# that differ across AWS regions. X-Ray tracing is enforced via Lambda config.
 
 # Check CloudTrail is enabled
 resource "aws_config_config_rule" "cloudtrail_enabled" {

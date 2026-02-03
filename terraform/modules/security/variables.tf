@@ -33,6 +33,12 @@ variable "sns_topic_arn" {
   default     = null
 }
 
+variable "enable_sns_notifications" {
+  description = "Enable SNS notifications for security findings"
+  type        = bool
+  default     = false
+}
+
 variable "log_retention_days" {
   description = "Log retention in days"
   type        = number

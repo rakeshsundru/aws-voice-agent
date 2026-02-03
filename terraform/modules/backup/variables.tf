@@ -23,9 +23,21 @@ variable "kms_key_arn" {
 }
 
 variable "sns_topic_arn" {
-  description = "SNS topic ARN for notifications (creates new if null)"
+  description = "SNS topic ARN for notifications"
   type        = string
   default     = null
+}
+
+variable "create_sns_topic" {
+  description = "Create a dedicated SNS topic for backup notifications"
+  type        = bool
+  default     = true
+}
+
+variable "enable_notifications" {
+  description = "Enable backup vault notifications (either via created or provided SNS topic)"
+  type        = bool
+  default     = true
 }
 
 # Retention Configuration
