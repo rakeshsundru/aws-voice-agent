@@ -44,9 +44,13 @@ neptune_config = {
   enabled = false
 }
 
-# Lex disabled for initial deployment
+# Lex V2 for intent recognition
 lex_config = {
-  enabled = false
+  enabled          = true
+  bot_name         = "voice-agent-bot"
+  description      = "Voice Agent Intent Recognition Bot"
+  idle_session_ttl = 300
+  data_privacy     = { child_directed = false }
 }
 
 # Lambda Configuration
@@ -85,7 +89,7 @@ security_config = {
   enable_encryption_in_transit = true
   kms_key_deletion_window      = 7  # Shorter for dev
   enable_vpc_endpoints         = true
-  enable_cloudtrail            = false  # Disable for dev to save costs
+  enable_cloudtrail            = true  # Enabled for audit logging
 }
 
 # Transcribe Configuration

@@ -297,3 +297,20 @@ module "neptune" {
 
   depends_on = [module.vpc, module.kms]
 }
+
+# -----------------------------------------------------------------------------
+# CloudTrail Module - Audit logging (Optional)
+# -----------------------------------------------------------------------------
+
+module "cloudtrail" {
+  source = "./modules/cloudtrail"
+  count  = var.security_config.enable_cloudtrail ? 1 : 0
+
+  name_prefix        = local.name_prefix
+  environment        = var.environment
+  random_suffix      = random_id.suffix.hex
+  log_retention_days = var.cloudwatch_config.log_retention_days
+  multi_region       = false
+  force_destroy      = var.s3_config.force_destroy
+  common_tags        = local.common_tags
+}
