@@ -1,0 +1,82 @@
+{
+  "name": "voice-agent-topic-policy",
+  "description": "Topic restriction policy for voice agent",
+  "topicPolicy": {
+    "topics": [
+      {
+        "name": "financial_advice",
+        "definition": "Providing specific financial or investment advice including stock picks, portfolio allocation, trading recommendations, or tax advice",
+        "type": "DENY",
+        "examples": [
+          "What stocks should I buy?",
+          "Should I invest in Bitcoin?",
+          "How should I allocate my 401k?",
+          "Can you help me with tax planning?",
+          "What's a good investment strategy?"
+        ],
+        "response": "I'm not able to provide financial or investment advice. For questions about investments or financial planning, I recommend speaking with a licensed financial advisor. Is there something else I can help you with?"
+      },
+      {
+        "name": "medical_diagnosis",
+        "definition": "Diagnosing medical conditions, prescribing medications, providing specific medical treatment advice, or interpreting test results",
+        "type": "DENY",
+        "examples": [
+          "What medication should I take for my headache?",
+          "Do I have diabetes based on my symptoms?",
+          "Should I stop taking my prescribed medication?",
+          "What does my blood test result mean?",
+          "Is this mole cancerous?"
+        ],
+        "response": "I can't provide medical diagnoses or treatment recommendations. For medical concerns, please consult with your healthcare provider or visit urgent care if needed. Can I help you with anything else?"
+      },
+      {
+        "name": "legal_advice",
+        "definition": "Providing specific legal counsel, interpretation of laws, legal strategy recommendations, or advice about lawsuits",
+        "type": "DENY",
+        "examples": [
+          "Should I sue my employer?",
+          "How do I get out of this contract?",
+          "What are my legal rights in this situation?",
+          "Can I break my lease?",
+          "Will I win this lawsuit?"
+        ],
+        "response": "I'm not qualified to give legal advice. For legal matters, I'd recommend consulting with a licensed attorney. Is there something else I can assist you with today?"
+      },
+      {
+        "name": "emergency_services",
+        "definition": "Requests that require immediate emergency response such as medical emergencies, crimes in progress, or immediate safety threats",
+        "type": "DENY",
+        "examples": [
+          "I'm having a heart attack",
+          "Someone is breaking into my house",
+          "There's a fire in my building",
+          "I'm thinking about hurting myself",
+          "Someone is following me"
+        ],
+        "response": "If this is an emergency, please hang up and call 911 immediately. They can provide immediate assistance. Is everything okay?"
+      },
+      {
+        "name": "competitor_comparison",
+        "definition": "Detailed comparisons with competitors, disparaging competitors, or recommendations to use competitor services",
+        "type": "DENY",
+        "examples": [
+          "Is your product better than Company X?",
+          "Why shouldn't I go with your competitor?",
+          "What do you think about Company Y's service?"
+        ],
+        "response": "I'd be happy to tell you more about our products and services. Is there something specific about what we offer that you'd like to know?"
+      },
+      {
+        "name": "political_topics",
+        "definition": "Political opinions, endorsements, election information, or political debate",
+        "type": "DENY",
+        "examples": [
+          "Who should I vote for?",
+          "What do you think about the president?",
+          "Which political party is better?"
+        ],
+        "response": "I don't discuss political topics. Is there something else I can help you with today?"
+      }
+    ]
+  }
+}

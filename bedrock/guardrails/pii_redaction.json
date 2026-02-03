@@ -1,0 +1,104 @@
+{
+  "name": "voice-agent-pii-policy",
+  "description": "PII handling policy for voice agent - HIPAA compliant",
+  "sensitiveInformationPolicy": {
+    "piiEntities": [
+      {
+        "type": "US_SOCIAL_SECURITY_NUMBER",
+        "action": "BLOCK",
+        "description": "Block Social Security Numbers - never process or store"
+      },
+      {
+        "type": "CREDIT_DEBIT_CARD_NUMBER",
+        "action": "BLOCK",
+        "description": "Block credit/debit card numbers"
+      },
+      {
+        "type": "US_BANK_ACCOUNT_NUMBER",
+        "action": "BLOCK",
+        "description": "Block bank account numbers"
+      },
+      {
+        "type": "US_BANK_ROUTING_NUMBER",
+        "action": "BLOCK",
+        "description": "Block bank routing numbers"
+      },
+      {
+        "type": "PIN",
+        "action": "BLOCK",
+        "description": "Block PINs and security codes"
+      },
+      {
+        "type": "PASSWORD",
+        "action": "BLOCK",
+        "description": "Block passwords and credentials"
+      },
+      {
+        "type": "CVV",
+        "action": "BLOCK",
+        "description": "Block card verification values"
+      },
+      {
+        "type": "DRIVER_ID",
+        "action": "ANONYMIZE",
+        "description": "Anonymize driver's license numbers"
+      },
+      {
+        "type": "US_PASSPORT_NUMBER",
+        "action": "ANONYMIZE",
+        "description": "Anonymize passport numbers"
+      },
+      {
+        "type": "EMAIL",
+        "action": "ANONYMIZE",
+        "description": "Anonymize email addresses in logs"
+      },
+      {
+        "type": "PHONE",
+        "action": "ANONYMIZE",
+        "description": "Anonymize phone numbers in logs"
+      },
+      {
+        "type": "NAME",
+        "action": "ANONYMIZE",
+        "description": "Anonymize names in logs"
+      },
+      {
+        "type": "ADDRESS",
+        "action": "ANONYMIZE",
+        "description": "Anonymize physical addresses in logs"
+      },
+      {
+        "type": "AGE",
+        "action": "ANONYMIZE",
+        "description": "Anonymize age information"
+      },
+      {
+        "type": "DATE_TIME",
+        "action": "ANONYMIZE",
+        "description": "Anonymize specific dates that could identify individuals"
+      }
+    ],
+    "regexPatterns": [
+      {
+        "name": "MEDICAL_RECORD_NUMBER",
+        "pattern": "MRN[:\\s-]?\\d{6,12}",
+        "action": "BLOCK",
+        "description": "Block medical record numbers"
+      },
+      {
+        "name": "HEALTH_INSURANCE_ID",
+        "pattern": "\\b[A-Z]{3}\\d{9}\\b",
+        "action": "BLOCK",
+        "description": "Block health insurance ID patterns"
+      },
+      {
+        "name": "POLICY_NUMBER",
+        "pattern": "POL[\\-]?\\d{8,12}",
+        "action": "ANONYMIZE",
+        "description": "Anonymize policy numbers"
+      }
+    ]
+  },
+  "blockedMessage": "I cannot process sensitive personal information like that. For your security, please do not share financial account numbers, Social Security numbers, or other sensitive data. How else can I assist you?"
+}

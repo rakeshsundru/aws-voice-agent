@@ -1,0 +1,213 @@
+# =============================================================================
+# AWS Voice Agent - Development Environment Configuration
+# =============================================================================
+
+environment: dev
+aws_region: us-east-1
+project_name: voice-agent
+resource_prefix: va-dev
+
+# -----------------------------------------------------------------------------
+# Bedrock Configuration
+# -----------------------------------------------------------------------------
+bedrock:
+  model_id: anthropic.claude-3-5-sonnet-20241022-v2:0
+  max_tokens: 2000
+  temperature: 0.7
+  guardrails_enabled: true
+  streaming_enabled: true
+  knowledge_base:
+    enabled: false
+    embedding_model: amazon.titan-embed-text-v1
+    chunking_strategy: FIXED_SIZE
+    chunk_size: 512
+    chunk_overlap: 20
+
+# -----------------------------------------------------------------------------
+# Connect Configuration
+# -----------------------------------------------------------------------------
+connect:
+  instance_alias: voice-agent-dev
+  identity_management_type: CONNECT_MANAGED
+  inbound_calls_enabled: true
+  outbound_calls_enabled: true
+  claim_phone_number: true
+  phone_number_type: DID
+  phone_number_country: US
+  contact_flow_logs: true
+  hours_of_operation:
+    name: dev-hours
+    time_zone: America/New_York
+    config:
+      - day: MONDAY
+        start_time: "00:00"
+        end_time: "23:59"
+      - day: TUESDAY
+        start_time: "00:00"
+        end_time: "23:59"
+      - day: WEDNESDAY
+        start_time: "00:00"
+        end_time: "23:59"
+      - day: THURSDAY
+        start_time: "00:00"
+        end_time: "23:59"
+      - day: FRIDAY
+        start_time: "00:00"
+        end_time: "23:59"
+      - day: SATURDAY
+        start_time: "00:00"
+        end_time: "23:59"
+      - day: SUNDAY
+        start_time: "00:00"
+        end_time: "23:59"
+
+# -----------------------------------------------------------------------------
+# Neptune Configuration (Phase 2)
+# -----------------------------------------------------------------------------
+neptune:
+  enabled: false
+  instance_class: db.t3.medium
+  cluster_size: 1
+  backup_retention_days: 1
+  preferred_backup_window: "03:00-04:00"
+  engine_version: "1.2.1.0"
+  port: 8182
+  iam_authentication: true
+  deletion_protection: false
+
+# -----------------------------------------------------------------------------
+# Transcribe Configuration
+# -----------------------------------------------------------------------------
+transcribe:
+  language_code: en-US
+  media_sample_rate: 8000
+  media_encoding: pcm
+  enable_partial_results: true
+  pii_entity_types:
+    - ALL
+  content_redaction_type: PII
+  content_redaction_output: redacted
+
+# -----------------------------------------------------------------------------
+# Lex Configuration
+# -----------------------------------------------------------------------------
+lex:
+  enabled: false
+  description: Voice Agent Intent Recognition Bot
+  idle_session_ttl: 300
+  data_privacy:
+    child_directed: false
+
+# -----------------------------------------------------------------------------
+# Polly Configuration
+# -----------------------------------------------------------------------------
+polly:
+  voice_id: Joanna
+  engine: neural
+  language_code: en-US
+  output_format: pcm
+  sample_rate: "8000"
+
+# -----------------------------------------------------------------------------
+# Lambda Configuration
+# -----------------------------------------------------------------------------
+lambda:
+  runtime: python3.11
+  memory_size: 512
+  timeout: 30
+  reserved_concurrency: -1
+  provisioned_concurrency: 0
+  log_retention_days: 7
+  environment_variables:
+    LOG_LEVEL: DEBUG
+
+# -----------------------------------------------------------------------------
+# S3 Configuration
+# -----------------------------------------------------------------------------
+s3:
+  recordings_retention_days: 30
+  transcripts_retention_days: 90
+  artifacts_retention_days: 90
+  enable_versioning: true
+  enable_access_logging: true
+  block_public_access: true
+  force_destroy: true
+
+# -----------------------------------------------------------------------------
+# CloudWatch Configuration
+# -----------------------------------------------------------------------------
+cloudwatch:
+  log_retention_days: 7
+  enable_detailed_monitoring: true
+  enable_contributor_insights: false
+  dashboard_enabled: true
+  alarms:
+    latency_threshold_ms: 3000
+    error_rate_threshold_percent: 10
+    concurrent_calls_threshold: 50
+    lambda_errors_threshold: 20
+    lambda_duration_threshold_ms: 15000
+    cost_alert_threshold_usd: 100
+
+# -----------------------------------------------------------------------------
+# Security Configuration
+# -----------------------------------------------------------------------------
+security:
+  enable_encryption_at_rest: true
+  enable_encryption_in_transit: true
+  kms_key_deletion_window: 7
+  enable_vpc_endpoints: true
+  enable_cloudtrail: true
+  enable_config: false
+
+# -----------------------------------------------------------------------------
+# VPC Configuration
+# -----------------------------------------------------------------------------
+vpc:
+  create_new: true
+  cidr_block: "10.0.0.0/16"
+  availability_zones: []
+  private_subnets:
+    - "10.0.1.0/24"
+    - "10.0.2.0/24"
+  public_subnets:
+    - "10.0.101.0/24"
+    - "10.0.102.0/24"
+  enable_nat_gateway: true
+  single_nat_gateway: true
+
+# -----------------------------------------------------------------------------
+# Agent Configuration
+# -----------------------------------------------------------------------------
+agent:
+  company_name: "ACME Corp (Dev)"
+  greeting_message: "Hello! Thank you for calling ACME Corp. This is a development environment. How can I help you?"
+  fallback_message: "I didn't quite understand that. Could you please rephrase?"
+  transfer_message: "Let me transfer you to a specialist."
+  goodbye_message: "Thank you for calling. Goodbye!"
+  max_conversation_turns: 50
+  silence_timeout_seconds: 10
+  max_call_duration_seconds: 1800
+  enable_call_recording: true
+  enable_transcription: true
+
+# -----------------------------------------------------------------------------
+# Integration Configuration
+# -----------------------------------------------------------------------------
+integration:
+  crm:
+    enabled: false
+  webhook:
+    enabled: false
+  sms:
+    enabled: false
+
+# -----------------------------------------------------------------------------
+# Tags
+# -----------------------------------------------------------------------------
+tags:
+  Environment: dev
+  Project: voice-agent
+  ManagedBy: terraform
+  CostCenter: engineering
+  Owner: platform-team

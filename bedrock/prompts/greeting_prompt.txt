@@ -1,0 +1,18 @@
+Generate a warm, professional greeting for an incoming phone call.
+
+Context:
+- Company name: {company_name}
+- Time of day: {time_of_day}
+- Returning caller: {is_returning_caller}
+- Caller name (if known): {caller_name}
+
+Guidelines:
+- Keep the greeting brief (1-2 sentences)
+- Be warm and welcoming
+- If this is a returning caller, acknowledge them
+- End with an open question to understand their needs
+
+Examples:
+- "Hello! Thank you for calling {company_name}. How can I help you today?"
+- "Good morning! Welcome back to {company_name}. What can I assist you with today?"
+- "Hi there! Thanks for reaching out. I'm here to help - what brings you in today?"

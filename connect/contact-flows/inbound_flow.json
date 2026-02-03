@@ -1,0 +1,258 @@
+{
+  "Version": "2019-10-30",
+  "StartAction": "start-logging",
+  "Metadata": {
+    "entryPointPosition": { "x": 40, "y": 40 },
+    "ActionMetadata": {
+      "start-logging": { "position": { "x": 40, "y": 40 } },
+      "set-recording": { "position": { "x": 200, "y": 40 } },
+      "set-attributes": { "position": { "x": 360, "y": 40 } },
+      "greeting": { "position": { "x": 520, "y": 40 } },
+      "get-input": { "position": { "x": 680, "y": 40 } },
+      "invoke-lambda": { "position": { "x": 840, "y": 40 } },
+      "speak-response": { "position": { "x": 1000, "y": 40 } },
+      "check-action": { "position": { "x": 1160, "y": 40 } },
+      "no-input": { "position": { "x": 680, "y": 200 } },
+      "lambda-error": { "position": { "x": 840, "y": 200 } },
+      "transfer-queue": { "position": { "x": 1320, "y": 200 } },
+      "goodbye": { "position": { "x": 1320, "y": 40 } },
+      "disconnect": { "position": { "x": 1480, "y": 120 } }
+    }
+  },
+  "Actions": [
+    {
+      "Identifier": "start-logging",
+      "Type": "UpdateContactFlowLoggingBehavior",
+      "Parameters": {
+        "LoggingBehavior": "Enabled"
+      },
+      "Transitions": {
+        "NextAction": "set-recording"
+      }
+    },
+    {
+      "Identifier": "set-recording",
+      "Type": "UpdateContactRecordingBehavior",
+      "Parameters": {
+        "RecordingBehavior": {
+          "RecordedParticipants": ["Agent", "Customer"]
+        }
+      },
+      "Transitions": {
+        "NextAction": "set-attributes"
+      }
+    },
+    {
+      "Identifier": "set-attributes",
+      "Type": "UpdateContactAttributes",
+      "Parameters": {
+        "Attributes": {
+          "sessionStart": "$.ContactId",
+          "eventType": "init"
+        }
+      },
+      "Transitions": {
+        "NextAction": "greeting",
+        "Errors": [
+          {
+            "NextAction": "greeting",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "greeting",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "Hello! Thank you for calling. How can I help you today?",
+        "SSML": "<speak><prosody rate=\"medium\">Hello! Thank you for calling. How can I help you today?</prosody></speak>",
+        "TextType": "ssml"
+      },
+      "Transitions": {
+        "NextAction": "get-input",
+        "Errors": [
+          {
+            "NextAction": "lambda-error",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "get-input",
+      "Type": "GetParticipantInput",
+      "Parameters": {
+        "InputTimeLimitSeconds": "8",
+        "Text": "",
+        "MediaStreamingConfiguration": {
+          "MediaType": "Audio",
+          "Destination": {
+            "Type": "Kinesis"
+          }
+        }
+      },
+      "Transitions": {
+        "NextAction": "invoke-lambda",
+        "Conditions": [],
+        "Errors": [
+          {
+            "NextAction": "no-input",
+            "ErrorType": "InputTimeLimitExceeded"
+          },
+          {
+            "NextAction": "lambda-error",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "invoke-lambda",
+      "Type": "InvokeLambdaFunction",
+      "Parameters": {
+        "LambdaFunctionARN": "{{lambda_function_arn}}",
+        "InvocationTimeLimitSeconds": "8",
+        "LambdaInvocationAttributes": {
+          "eventType": "user_input",
+          "userInput": "$.LastCollectedUtterance"
+        }
+      },
+      "Transitions": {
+        "NextAction": "speak-response",
+        "Errors": [
+          {
+            "NextAction": "lambda-error",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "speak-response",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "$.External.response",
+        "TextType": "text"
+      },
+      "Transitions": {
+        "NextAction": "check-action",
+        "Errors": [
+          {
+            "NextAction": "lambda-error",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "check-action",
+      "Type": "CheckContactAttributes",
+      "Parameters": {
+        "Attribute": "$.External.action",
+        "ComparisonType": "Equals"
+      },
+      "Transitions": {
+        "NextAction": "get-input",
+        "Conditions": [
+          {
+            "NextAction": "transfer-queue",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": ["transfer"]
+            }
+          },
+          {
+            "NextAction": "goodbye",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": ["end"]
+            }
+          }
+        ],
+        "Errors": [
+          {
+            "NextAction": "get-input",
+            "ErrorType": "NoMatchingCondition"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "no-input",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "I didn't hear anything. Are you still there?",
+        "SSML": "<speak><prosody rate=\"medium\">I didn't hear anything. Are you still there?</prosody></speak>",
+        "TextType": "ssml"
+      },
+      "Transitions": {
+        "NextAction": "get-input",
+        "Errors": [
+          {
+            "NextAction": "goodbye",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "lambda-error",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "I apologize, but I'm having some technical difficulties. Let me connect you with someone who can help.",
+        "SSML": "<speak><prosody rate=\"medium\">I apologize, but I'm having some technical difficulties. Let me connect you with someone who can help.</prosody></speak>",
+        "TextType": "ssml"
+      },
+      "Transitions": {
+        "NextAction": "transfer-queue",
+        "Errors": [
+          {
+            "NextAction": "disconnect",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "transfer-queue",
+      "Type": "TransferContactToQueue",
+      "Parameters": {
+        "QueueId": "{{queue_id}}"
+      },
+      "Transitions": {
+        "NextAction": "disconnect",
+        "Errors": [
+          {
+            "NextAction": "disconnect",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "goodbye",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "Thank you for calling. Have a great day!",
+        "SSML": "<speak><prosody rate=\"medium\">Thank you for calling. Have a great day!</prosody></speak>",
+        "TextType": "ssml"
+      },
+      "Transitions": {
+        "NextAction": "disconnect",
+        "Errors": [
+          {
+            "NextAction": "disconnect",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "disconnect",
+      "Type": "DisconnectParticipant",
+      "Parameters": {},
+      "Transitions": {}
+    }
+  ]
+}
