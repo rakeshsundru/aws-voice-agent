@@ -335,7 +335,7 @@ module "alerting" {
   lambda_duration_threshold_ms = var.production_config.lambda_duration_threshold_ms
   lambda_concurrency_threshold = var.production_config.lambda_concurrency_threshold
   connect_instance_id          = module.connect.instance_id
-  dlq_arns                     = module.lambda.dlq_names
+  dlq_arns                     = module.lambda.dlq_arns
   enable_anomaly_detection     = var.production_config.enable_anomaly_detection
   monthly_budget_usd           = var.production_config.monthly_budget_usd
   common_tags                  = local.common_tags
