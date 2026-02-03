@@ -11,6 +11,12 @@ override.tf.json
 crash.log
 crash.*.log
 
+# Terraform variables with sensitive data
+terraform.tfvars
+*.auto.tfvars
+terraform.tfvars.json
+*.auto.tfvars.json
+
 # Python
 __pycache__/
 *.py[cod]
