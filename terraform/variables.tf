@@ -67,7 +67,8 @@ variable "vpc_config" {
 variable "connect_config" {
   description = "Amazon Connect configuration"
   type = object({
-    instance_alias           = string
+    instance_alias           = optional(string)
+    existing_instance_id     = optional(string)
     identity_management_type = optional(string, "CONNECT_MANAGED")
     inbound_calls_enabled    = optional(bool, true)
     outbound_calls_enabled   = optional(bool, true)

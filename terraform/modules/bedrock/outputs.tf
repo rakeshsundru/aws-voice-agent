@@ -19,27 +19,27 @@ output "guardrail_version" {
 
 output "knowledge_base_id" {
   description = "ID of the Bedrock knowledge base"
-  value       = var.knowledge_base != null && var.knowledge_base.enabled ? aws_bedrockagent_knowledge_base.main[0].id : null
+  value       = try(var.knowledge_base.enabled, false) ? aws_bedrockagent_knowledge_base.main[0].id : null
 }
 
 output "knowledge_base_arn" {
   description = "ARN of the Bedrock knowledge base"
-  value       = var.knowledge_base != null && var.knowledge_base.enabled ? aws_bedrockagent_knowledge_base.main[0].arn : null
+  value       = try(var.knowledge_base.enabled, false) ? aws_bedrockagent_knowledge_base.main[0].arn : null
 }
 
 output "opensearch_collection_arn" {
   description = "ARN of the OpenSearch Serverless collection"
-  value       = var.knowledge_base != null && var.knowledge_base.enabled ? aws_opensearchserverless_collection.knowledge_base[0].arn : null
+  value       = try(var.knowledge_base.enabled, false) ? aws_opensearchserverless_collection.knowledge_base[0].arn : null
 }
 
 output "opensearch_collection_endpoint" {
   description = "Endpoint of the OpenSearch Serverless collection"
-  value       = var.knowledge_base != null && var.knowledge_base.enabled ? aws_opensearchserverless_collection.knowledge_base[0].collection_endpoint : null
+  value       = try(var.knowledge_base.enabled, false) ? aws_opensearchserverless_collection.knowledge_base[0].collection_endpoint : null
 }
 
 output "data_source_id" {
   description = "ID of the knowledge base data source"
-  value       = var.knowledge_base != null && var.knowledge_base.enabled ? aws_bedrockagent_data_source.s3[0].data_source_id : null
+  value       = try(var.knowledge_base.enabled, false) ? aws_bedrockagent_data_source.s3[0].data_source_id : null
 }
 
 output "model_id" {

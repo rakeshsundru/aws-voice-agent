@@ -153,7 +153,7 @@ resource "aws_bedrock_guardrail_version" "main" {
 
 # OpenSearch Serverless Collection for Knowledge Base
 resource "aws_opensearchserverless_collection" "knowledge_base" {
-  count = var.knowledge_base != null && var.knowledge_base.enabled ? 1 : 0
+  count = try(var.knowledge_base.enabled, false) ? 1 : 0
 
   name        = "${var.name_prefix}-kb"
   description = "Knowledge base collection for ${var.name_prefix}"
@@ -169,7 +169,7 @@ resource "aws_opensearchserverless_collection" "knowledge_base" {
 
 # OpenSearch Serverless Encryption Policy
 resource "aws_opensearchserverless_security_policy" "encryption" {
-  count = var.knowledge_base != null && var.knowledge_base.enabled ? 1 : 0
+  count = try(var.knowledge_base.enabled, false) ? 1 : 0
 
   name = "${var.name_prefix}-encryption"
   type = "encryption"
@@ -187,7 +187,7 @@ resource "aws_opensearchserverless_security_policy" "encryption" {
 
 # OpenSearch Serverless Network Policy
 resource "aws_opensearchserverless_security_policy" "network" {
-  count = var.knowledge_base != null && var.knowledge_base.enabled ? 1 : 0
+  count = try(var.knowledge_base.enabled, false) ? 1 : 0
 
   name = "${var.name_prefix}-network"
   type = "network"
@@ -207,7 +207,7 @@ resource "aws_opensearchserverless_security_policy" "network" {
 
 # OpenSearch Serverless Access Policy
 resource "aws_opensearchserverless_access_policy" "knowledge_base" {
-  count = var.knowledge_base != null && var.knowledge_base.enabled ? 1 : 0
+  count = try(var.knowledge_base.enabled, false) ? 1 : 0
 
   name = "${var.name_prefix}-access"
   type = "data"
@@ -246,7 +246,7 @@ resource "aws_opensearchserverless_access_policy" "knowledge_base" {
 
 # Bedrock Knowledge Base
 resource "aws_bedrockagent_knowledge_base" "main" {
-  count = var.knowledge_base != null && var.knowledge_base.enabled ? 1 : 0
+  count = try(var.knowledge_base.enabled, false) ? 1 : 0
 
   name        = "${var.name_prefix}-knowledge-base"
   description = "Knowledge base for voice agent - ${var.name_prefix}"
@@ -277,7 +277,7 @@ resource "aws_bedrockagent_knowledge_base" "main" {
 
 # Knowledge Base Data Source (S3)
 resource "aws_bedrockagent_data_source" "s3" {
-  count = var.knowledge_base != null && var.knowledge_base.enabled ? 1 : 0
+  count = try(var.knowledge_base.enabled, false) ? 1 : 0
 
   knowledge_base_id = aws_bedrockagent_knowledge_base.main[0].id
   name              = "${var.name_prefix}-s3-source"

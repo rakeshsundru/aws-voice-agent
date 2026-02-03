@@ -170,12 +170,16 @@ output "quick_start" {
     AWS Voice Agent Deployment Complete!
     =========================================
 
-    Phone Number: ${module.connect.phone_number}
+    Phone Number: ${module.connect.phone_number != null ? module.connect.phone_number : "Not claimed - claim in AWS Connect Console"}
+
+    Connect Instance URL: https://${module.connect.instance_alias}.my.connect.aws
+    Contact Flow ID: ${module.connect.contact_flow_id}
 
     To test your voice agent:
-    1. Call the phone number above
-    2. Speak your request
-    3. The agent will respond
+    1. Claim a phone number in Connect Console
+    2. Associate it with contact flow: ${module.connect.contact_flow_id}
+    3. Call the phone number
+    4. The agent will respond
 
     Monitoring:
     - CloudWatch Dashboard: ${module.cloudwatch.dashboard_url}
@@ -186,9 +190,6 @@ output "quick_start" {
     - Recordings: s3://${module.s3.bucket_names["recordings"]}
     - Transcripts: s3://${module.s3.bucket_names["transcripts"]}
     - Artifacts: s3://${module.s3.bucket_names["artifacts"]}
-
-    For more information, see the documentation at:
-    docs/DEPLOYMENT.md
 
   EOT
 }

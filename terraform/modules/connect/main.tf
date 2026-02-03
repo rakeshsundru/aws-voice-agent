@@ -4,11 +4,21 @@
 
 data "aws_region" "current" {}
 
+locals {
+  create_instance = var.existing_instance_id == null
+  instance_id     = local.create_instance ? aws_connect_instance.main[0].id : var.existing_instance_id
+  instance_arn    = local.create_instance ? aws_connect_instance.main[0].arn : "arn:aws:connect:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:instance/${var.existing_instance_id}"
+}
+
+data "aws_caller_identity" "current" {}
+
 # -----------------------------------------------------------------------------
-# Amazon Connect Instance
+# Amazon Connect Instance (only create if not using existing)
 # -----------------------------------------------------------------------------
 
 resource "aws_connect_instance" "main" {
+  count = local.create_instance ? 1 : 0
+
   identity_management_type = var.identity_management_type
   inbound_calls_enabled    = var.inbound_calls_enabled
   outbound_calls_enabled   = var.outbound_calls_enabled
@@ -18,28 +28,14 @@ resource "aws_connect_instance" "main" {
 }
 
 # -----------------------------------------------------------------------------
-# Enable Contact Flow Logs
+# Storage configurations (only for new instances)
+# For existing instances, storage is already configured via AWS Console
 # -----------------------------------------------------------------------------
 
-resource "aws_connect_instance_storage_config" "contact_trace_records" {
-  instance_id   = aws_connect_instance.main.id
-  resource_type = "CONTACT_TRACE_RECORDS"
-
-  storage_config {
-    storage_type = "S3"
-    s3_config {
-      bucket_name   = var.s3_bucket_recordings
-      bucket_prefix = "ctr"
-      encryption_config {
-        encryption_type = "KMS"
-        key_id          = var.kms_key_arn
-      }
-    }
-  }
-}
-
 resource "aws_connect_instance_storage_config" "call_recordings" {
-  instance_id   = aws_connect_instance.main.id
+  count = local.create_instance ? 1 : 0
+
+  instance_id   = local.instance_id
   resource_type = "CALL_RECORDINGS"
 
   storage_config {
@@ -56,7 +52,9 @@ resource "aws_connect_instance_storage_config" "call_recordings" {
 }
 
 resource "aws_connect_instance_storage_config" "chat_transcripts" {
-  instance_id   = aws_connect_instance.main.id
+  count = local.create_instance ? 1 : 0
+
+  instance_id   = local.instance_id
   resource_type = "CHAT_TRANSCRIPTS"
 
   storage_config {
@@ -77,7 +75,7 @@ resource "aws_connect_instance_storage_config" "chat_transcripts" {
 # -----------------------------------------------------------------------------
 
 resource "aws_connect_hours_of_operation" "main" {
-  instance_id = aws_connect_instance.main.id
+  instance_id = local.instance_id
   name        = var.hours_of_operation != null ? var.hours_of_operation.name : "${var.name_prefix}-hours"
   description = "Hours of operation for ${var.name_prefix}"
   time_zone   = var.hours_of_operation != null ? var.hours_of_operation.time_zone : "America/New_York"
@@ -115,7 +113,7 @@ resource "aws_connect_hours_of_operation" "main" {
 # -----------------------------------------------------------------------------
 
 resource "aws_connect_queue" "main" {
-  instance_id           = aws_connect_instance.main.id
+  instance_id           = local.instance_id
   name                  = "${var.name_prefix}-queue"
   description           = "Main queue for ${var.name_prefix}"
   hours_of_operation_id = aws_connect_hours_of_operation.main.hours_of_operation_id
@@ -128,7 +126,7 @@ resource "aws_connect_queue" "main" {
 # -----------------------------------------------------------------------------
 
 resource "aws_connect_routing_profile" "main" {
-  instance_id               = aws_connect_instance.main.id
+  instance_id               = local.instance_id
   name                      = "${var.name_prefix}-routing"
   description               = "Routing profile for ${var.name_prefix}"
   default_outbound_queue_id = aws_connect_queue.main.queue_id
@@ -153,7 +151,7 @@ resource "aws_connect_routing_profile" "main" {
 # -----------------------------------------------------------------------------
 
 resource "aws_connect_lambda_function_association" "orchestrator" {
-  instance_id  = aws_connect_instance.main.id
+  instance_id  = local.instance_id
   function_arn = var.lambda_function_arn
 }
 
@@ -162,192 +160,90 @@ resource "aws_connect_lambda_function_association" "orchestrator" {
 # -----------------------------------------------------------------------------
 
 resource "aws_connect_contact_flow" "inbound" {
-  instance_id = aws_connect_instance.main.id
+  instance_id = local.instance_id
   name        = "${var.name_prefix}-inbound-flow"
   description = "Inbound contact flow for voice agent"
   type        = "CONTACT_FLOW"
 
-  content = jsonencode({
-    Version     = "2019-10-30"
-    StartAction = "greeting"
-    Actions = [
-      {
-        Identifier = "greeting"
-        Type       = "MessageParticipant"
-        Parameters = {
-          Text = "Welcome to our voice agent. How can I help you today?"
-        }
-        Transitions = {
-          NextAction = "get_input"
-          Errors = [
-            {
-              NextAction  = "error_handling"
-              ErrorType   = "NoMatchingError"
-            }
-          ]
-        }
+  content = <<-EOF
+{
+  "Version": "2019-10-30",
+  "StartAction": "play_welcome",
+  "Actions": [
+    {
+      "Identifier": "play_welcome",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "Welcome to our voice agent. How can I help you today?"
       },
-      {
-        Identifier = "get_input"
-        Type       = "GetParticipantInput"
-        Parameters = {
-          InputTimeLimitSeconds = "10"
-          Text                  = ""
-        }
-        Transitions = {
-          NextAction = "invoke_lambda"
-          Conditions = []
-          Errors = [
-            {
-              NextAction  = "no_input"
-              ErrorType   = "InputTimeLimitExceeded"
-            },
-            {
-              NextAction  = "error_handling"
-              ErrorType   = "NoMatchingError"
-            }
-          ]
-        }
-      },
-      {
-        Identifier = "invoke_lambda"
-        Type       = "InvokeLambdaFunction"
-        Parameters = {
-          LambdaFunctionARN = var.lambda_function_arn
-          InvocationTimeLimitSeconds = "8"
-        }
-        Transitions = {
-          NextAction = "speak_response"
-          Errors = [
-            {
-              NextAction  = "lambda_error"
-              ErrorType   = "NoMatchingError"
-            }
-          ]
-        }
-      },
-      {
-        Identifier = "speak_response"
-        Type       = "MessageParticipant"
-        Parameters = {
-          Text = "$.External.response"
-        }
-        Transitions = {
-          NextAction = "check_continue"
-          Errors = [
-            {
-              NextAction  = "error_handling"
-              ErrorType   = "NoMatchingError"
-            }
-          ]
-        }
-      },
-      {
-        Identifier = "check_continue"
-        Type       = "CheckAttribute"
-        Parameters = {
-          Attribute        = "$.External.action"
-          ComparisonType   = "Equals"
-          ComparisonValue  = "transfer"
-        }
-        Transitions = {
-          NextAction = "get_input"
-          Conditions = [
-            {
-              NextAction     = "transfer_to_agent"
-              Condition = {
-                Operator  = "Equals"
-                Operands  = ["transfer"]
-              }
-            },
-            {
-              NextAction     = "end_call"
-              Condition = {
-                Operator  = "Equals"
-                Operands  = ["end"]
-              }
-            }
-          ]
-          Errors = [
-            {
-              NextAction  = "get_input"
-              ErrorType   = "NoMatchingCondition"
-            }
-          ]
-        }
-      },
-      {
-        Identifier = "no_input"
-        Type       = "MessageParticipant"
-        Parameters = {
-          Text = "I didn't hear anything. Could you please repeat that?"
-        }
-        Transitions = {
-          NextAction = "get_input"
-          Errors = [
-            {
-              NextAction  = "error_handling"
-              ErrorType   = "NoMatchingError"
-            }
-          ]
-        }
-      },
-      {
-        Identifier = "lambda_error"
-        Type       = "MessageParticipant"
-        Parameters = {
-          Text = "I'm having trouble processing your request. Let me connect you to an agent."
-        }
-        Transitions = {
-          NextAction = "transfer_to_agent"
-          Errors = [
-            {
-              NextAction  = "end_call"
-              ErrorType   = "NoMatchingError"
-            }
-          ]
-        }
-      },
-      {
-        Identifier = "error_handling"
-        Type       = "MessageParticipant"
-        Parameters = {
-          Text = "Sorry, I encountered an error. Please try again later."
-        }
-        Transitions = {
-          NextAction = "end_call"
-          Errors = [
-            {
-              NextAction  = "end_call"
-              ErrorType   = "NoMatchingError"
-            }
-          ]
-        }
-      },
-      {
-        Identifier = "transfer_to_agent"
-        Type       = "TransferContactToQueue"
-        Parameters = {
-          QueueId = aws_connect_queue.main.queue_id
-        }
-        Transitions = {
-          NextAction = "end_call"
-          Errors = [
-            {
-              NextAction  = "end_call"
-              ErrorType   = "NoMatchingError"
-            }
-          ]
-        }
-      },
-      {
-        Identifier = "end_call"
-        Type       = "DisconnectParticipant"
-        Parameters = {}
-        Transitions = {}
+      "Transitions": {
+        "NextAction": "invoke_lambda",
+        "Errors": [
+          {
+            "NextAction": "disconnect",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
       }
-    ]
-  })
+    },
+    {
+      "Identifier": "invoke_lambda",
+      "Type": "InvokeLambdaFunction",
+      "Parameters": {
+        "LambdaFunctionARN": "${var.lambda_function_arn}",
+        "InvocationTimeLimitSeconds": "8"
+      },
+      "Transitions": {
+        "NextAction": "play_response",
+        "Errors": [
+          {
+            "NextAction": "play_error",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "play_response",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "$.External.response"
+      },
+      "Transitions": {
+        "NextAction": "invoke_lambda",
+        "Errors": [
+          {
+            "NextAction": "disconnect",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "play_error",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "I'm sorry, I encountered an error. Please try again later."
+      },
+      "Transitions": {
+        "NextAction": "disconnect",
+        "Errors": [
+          {
+            "NextAction": "disconnect",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "disconnect",
+      "Type": "DisconnectParticipant",
+      "Parameters": {},
+      "Transitions": {}
+    }
+  ]
+}
+EOF
 
   tags = var.common_tags
 }
@@ -359,20 +255,14 @@ resource "aws_connect_contact_flow" "inbound" {
 resource "aws_connect_phone_number" "main" {
   count = var.claim_phone_number ? 1 : 0
 
-  target_arn   = aws_connect_instance.main.arn
+  target_arn   = local.instance_arn
   country_code = var.phone_number_country
   type         = var.phone_number_type
   prefix       = var.phone_number_prefix
 
   tags = var.common_tags
-}
 
-# Associate phone number with contact flow
-resource "aws_connect_phone_number_contact_flow" "main" {
-  count = var.claim_phone_number ? 1 : 0
-
-  phone_number_id = aws_connect_phone_number.main[0].id
-  contact_flow_id = aws_connect_contact_flow.inbound.contact_flow_id
+  depends_on = [aws_connect_contact_flow.inbound]
 }
 
 # -----------------------------------------------------------------------------
@@ -382,7 +272,7 @@ resource "aws_connect_phone_number_contact_flow" "main" {
 resource "aws_cloudwatch_log_group" "connect" {
   count = var.contact_flow_logs ? 1 : 0
 
-  name              = "/aws/connect/${aws_connect_instance.main.id}"
+  name              = "/aws/connect/${local.instance_id}"
   retention_in_days = 30
   kms_key_id        = var.kms_key_arn
 
