@@ -314,3 +314,106 @@ module "cloudtrail" {
   force_destroy      = var.s3_config.force_destroy
   common_tags        = local.common_tags
 }
+
+# -----------------------------------------------------------------------------
+# Alerting Module - SNS Topics and Enhanced Alarms
+# -----------------------------------------------------------------------------
+
+module "alerting" {
+  source = "./modules/alerting"
+  count  = var.production_config.enable_alerting ? 1 : 0
+
+  name_prefix   = local.name_prefix
+  kms_key_arn   = module.kms.key_arns["cloudwatch"]
+  alert_email   = var.production_config.alert_email
+
+  lambda_function_names = {
+    orchestrator = module.lambda.orchestrator_function_name
+    integration  = module.lambda.integration_function_name
+  }
+
+  lambda_duration_threshold_ms = var.production_config.lambda_duration_threshold_ms
+  lambda_concurrency_threshold = var.production_config.lambda_concurrency_threshold
+  connect_instance_id          = module.connect.instance_id
+  dlq_arns                     = module.lambda.dlq_names
+  enable_anomaly_detection     = var.production_config.enable_anomaly_detection
+  monthly_budget_usd           = var.production_config.monthly_budget_usd
+  common_tags                  = local.common_tags
+
+  depends_on = [module.lambda, module.kms]
+}
+
+# -----------------------------------------------------------------------------
+# Security Module - GuardDuty, Security Hub, Config, VPC Flow Logs
+# -----------------------------------------------------------------------------
+
+module "security" {
+  source = "./modules/security"
+  count  = var.production_config.enable_security_services ? 1 : 0
+
+  name_prefix          = local.name_prefix
+  environment          = var.environment
+  random_suffix        = random_id.suffix.hex
+  vpc_id               = module.vpc.vpc_id
+  kms_key_arn          = module.kms.key_arns["cloudwatch"]
+  sns_topic_arn        = var.production_config.enable_alerting ? module.alerting[0].critical_topic_arn : null
+  log_retention_days   = var.cloudwatch_config.log_retention_days
+  enable_vpc_flow_logs = var.production_config.enable_vpc_flow_logs
+  enable_guardduty     = var.production_config.enable_guardduty
+  enable_security_hub  = var.production_config.enable_security_hub
+  enable_aws_config    = var.production_config.enable_aws_config
+  common_tags          = local.common_tags
+
+  depends_on = [module.vpc, module.kms]
+}
+
+# -----------------------------------------------------------------------------
+# Secrets Module - AWS Secrets Manager
+# -----------------------------------------------------------------------------
+
+module "secrets" {
+  source = "./modules/secrets"
+  count  = var.production_config.enable_secrets_manager ? 1 : 0
+
+  name_prefix         = local.name_prefix
+  environment         = var.environment
+  kms_key_arn         = module.kms.key_arns["lambda"]
+  bedrock_model_id    = var.bedrock_config.model_id
+  bedrock_max_tokens  = var.bedrock_config.max_tokens
+  bedrock_temperature = var.bedrock_config.temperature
+  neptune_enabled     = var.neptune_config.enabled
+  neptune_endpoint    = var.neptune_config.enabled ? module.neptune[0].cluster_endpoint : ""
+  neptune_port        = var.neptune_config.port
+  lex_enabled         = var.lex_config.enabled
+  common_tags         = local.common_tags
+
+  depends_on = [module.kms]
+}
+
+# -----------------------------------------------------------------------------
+# Backup Module - AWS Backup
+# -----------------------------------------------------------------------------
+
+module "backup" {
+  source = "./modules/backup"
+  count  = var.production_config.enable_backup ? 1 : 0
+
+  name_prefix        = local.name_prefix
+  environment        = var.environment
+  random_suffix      = random_id.suffix.hex
+  kms_key_arn        = module.kms.key_arns["s3"]
+  sns_topic_arn      = var.production_config.enable_alerting ? module.alerting[0].warning_topic_arn : null
+
+  daily_backup_retention_days   = var.production_config.daily_backup_retention_days
+  weekly_backup_retention_days  = var.production_config.weekly_backup_retention_days
+  monthly_backup_retention_days = var.production_config.monthly_backup_retention_days
+
+  backup_resources = concat(
+    [for name, arn in module.s3.bucket_arns : arn],
+    var.neptune_config.enabled ? [module.neptune[0].cluster_arn] : []
+  )
+
+  common_tags = local.common_tags
+
+  depends_on = [module.s3, module.kms]
+}

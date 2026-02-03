@@ -150,6 +150,12 @@ variable "layers" {
   default     = []
 }
 
+variable "enable_dlq" {
+  description = "Enable Dead Letter Queues for Lambda functions"
+  type        = bool
+  default     = true
+}
+
 variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)

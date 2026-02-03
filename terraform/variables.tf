@@ -323,3 +323,37 @@ variable "agent_config" {
   })
   default = {}
 }
+
+# -----------------------------------------------------------------------------
+# Production Readiness Configuration
+# -----------------------------------------------------------------------------
+
+variable "production_config" {
+  description = "Production readiness features configuration"
+  type = object({
+    # Alerting
+    enable_alerting              = optional(bool, true)
+    alert_email                  = optional(string)
+    lambda_duration_threshold_ms = optional(number, 10000)
+    lambda_concurrency_threshold = optional(number, 50)
+    enable_anomaly_detection     = optional(bool, true)
+    monthly_budget_usd           = optional(number, 0)
+
+    # Security Services
+    enable_security_services = optional(bool, true)
+    enable_vpc_flow_logs     = optional(bool, true)
+    enable_guardduty         = optional(bool, true)
+    enable_security_hub      = optional(bool, true)
+    enable_aws_config        = optional(bool, true)
+
+    # Secrets Manager
+    enable_secrets_manager = optional(bool, true)
+
+    # Backup
+    enable_backup                   = optional(bool, true)
+    daily_backup_retention_days     = optional(number, 7)
+    weekly_backup_retention_days    = optional(number, 35)
+    monthly_backup_retention_days   = optional(number, 365)
+  })
+  default = {}
+}
