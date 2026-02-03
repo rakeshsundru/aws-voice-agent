@@ -242,9 +242,66 @@ echo "=== Check Complete ==="
 
 ## Step-by-Step Deployment Guide
 
-Follow these steps **in order**. Do not skip any step.
+There are **two ways** to deploy this project:
 
-### Step 1: Clone the Repository
+| Method | Best For | Command |
+|--------|----------|---------|
+| **Interactive (Recommended)** | First-time users, guided setup | `./deploy.sh` |
+| **Config-based** | CI/CD, advanced users | `./scripts/deploy.sh dev` |
+
+---
+
+### Option A: Interactive Deployment (Recommended)
+
+This method walks you through all configuration options with prompts.
+
+#### Step 1: Clone and Enter the Repository
+
+```bash
+git clone https://github.com/your-org/aws-voice-agent.git
+cd aws-voice-agent
+```
+
+#### Step 2: Run the Interactive Deployment Script
+
+```bash
+./deploy.sh
+```
+
+The script will prompt you for:
+- Project name and environment
+- AWS region
+- Owner email (for alerts)
+- Amazon Connect configuration
+- Optional features (Lex, CloudTrail, Neptune)
+- Production features (GuardDuty, Security Hub, Backup)
+
+#### Step 3: Wait for Deployment
+
+The script will:
+1. Generate `terraform/terraform.tfvars` based on your inputs
+2. Create Lambda layer dependencies
+3. Initialize and apply Terraform
+
+**Deployment takes 10-20 minutes.**
+
+#### Step 4: Test Your Voice Agent
+
+After deployment completes, you'll see output with your Connect instance details. Configure a phone number in the Amazon Connect console to test.
+
+#### To Destroy
+
+```bash
+./destroy.sh
+```
+
+---
+
+### Option B: Config-Based Deployment
+
+This method uses YAML configuration files for reproducible deployments.
+
+#### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/your-org/aws-voice-agent.git
@@ -645,6 +702,7 @@ aws-voice-agent/
 │   ├── main.tf               # Main Terraform configuration
 │   ├── variables.tf          # Input variables
 │   ├── outputs.tf            # Output values
+│   ├── terraform.tfvars.example  # Template for configuration ← COPY THIS
 │   └── modules/              # Reusable infrastructure modules
 │       ├── connect/          # Amazon Connect setup
 │       ├── lambda/           # Lambda functions
@@ -653,7 +711,11 @@ aws-voice-agent/
 │       ├── vpc/              # Network configuration
 │       ├── iam/              # Security roles
 │       ├── kms/              # Encryption keys
-│       └── cloudwatch/       # Monitoring
+│       ├── cloudwatch/       # Monitoring
+│       ├── alerting/         # SNS alerts & alarms
+│       ├── security/         # GuardDuty, Security Hub, Config
+│       ├── secrets/          # Secrets Manager
+│       └── backup/           # AWS Backup
 │
 ├── lambda/                    # Application code
 │   ├── orchestrator/         # Main voice agent logic
@@ -697,6 +759,17 @@ aws-voice-agent/
 ---
 
 ## Quick Reference
+
+### Interactive Deployment (Recommended)
+
+| Action | Command |
+|--------|---------|
+| Deploy (guided) | `./deploy.sh` |
+| Destroy | `./destroy.sh` |
+| View logs | `aws logs tail /aws/lambda/voice-agent-dev-orchestrator --follow` |
+| Check status | `cd terraform && terraform output` |
+
+### Config-Based Deployment
 
 | Action | Command |
 |--------|---------|
