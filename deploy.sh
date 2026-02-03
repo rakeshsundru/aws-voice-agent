@@ -270,6 +270,25 @@ collect_project_config() {
     read -p "Enable Neptune graph database? (y/N): " enable_neptune
     ENABLE_NEPTUNE=$([[ "$enable_neptune" =~ ^[Yy]$ ]] && echo "true" || echo "false")
 
+    # Production Features
+    echo ""
+    print_info "Production Features (Security & Monitoring)"
+
+    read -p "Enable GuardDuty threat detection? (Y/n): " enable_guardduty
+    ENABLE_GUARDDUTY=$([[ "$enable_guardduty" =~ ^[Nn]$ ]] && echo "false" || echo "true")
+
+    read -p "Enable Security Hub compliance? (Y/n): " enable_securityhub
+    ENABLE_SECURITYHUB=$([[ "$enable_securityhub" =~ ^[Nn]$ ]] && echo "false" || echo "true")
+
+    read -p "Enable SNS alerting? (Y/n): " enable_alerting
+    ENABLE_ALERTING=$([[ "$enable_alerting" =~ ^[Nn]$ ]] && echo "false" || echo "true")
+
+    read -p "Enable AWS Backup? (Y/n): " enable_backup
+    ENABLE_BACKUP=$([[ "$enable_backup" =~ ^[Nn]$ ]] && echo "false" || echo "true")
+
+    read -p "Monthly budget alert (USD, 0 to disable) [500]: " monthly_budget
+    MONTHLY_BUDGET="${monthly_budget:-500}"
+
     # Summary
     echo ""
     print_section "Configuration Summary"
@@ -281,6 +300,11 @@ collect_project_config() {
     echo "  Lex V2:            ${ENABLE_LEX}"
     echo "  CloudTrail:        ${ENABLE_CLOUDTRAIL}"
     echo "  Neptune:           ${ENABLE_NEPTUNE}"
+    echo "  GuardDuty:         ${ENABLE_GUARDDUTY}"
+    echo "  Security Hub:      ${ENABLE_SECURITYHUB}"
+    echo "  SNS Alerting:      ${ENABLE_ALERTING}"
+    echo "  AWS Backup:        ${ENABLE_BACKUP}"
+    echo "  Monthly Budget:    \$${MONTHLY_BUDGET}"
     echo ""
 
     read -p "Proceed with this configuration? (Y/n): " confirm
@@ -466,6 +490,40 @@ security_config = {
   kms_key_deletion_window      = 7
   enable_vpc_endpoints         = true
   enable_cloudtrail            = ${ENABLE_CLOUDTRAIL}
+}
+
+# -----------------------------------------------------------------------------
+# Production Configuration (Security & Monitoring)
+# -----------------------------------------------------------------------------
+
+production_config = {
+  # Alerting
+  enable_alerting              = ${ENABLE_ALERTING}
+  alert_email                  = "${OWNER_EMAIL}"
+
+  # Security Services
+  enable_security_services     = ${ENABLE_GUARDDUTY}
+  enable_vpc_flow_logs         = ${ENABLE_GUARDDUTY}
+  enable_guardduty             = ${ENABLE_GUARDDUTY}
+  enable_security_hub          = ${ENABLE_SECURITYHUB}
+  enable_aws_config            = ${ENABLE_SECURITYHUB}
+
+  # Secrets & Backup
+  enable_secrets_manager       = true
+  enable_backup                = ${ENABLE_BACKUP}
+
+  # Cost Management
+  monthly_budget_usd           = ${MONTHLY_BUDGET}
+
+  # Alarm Thresholds
+  lambda_duration_threshold_ms = 10000
+  lambda_concurrency_threshold = 50
+  enable_anomaly_detection     = true
+
+  # Backup Retention
+  daily_backup_retention_days   = 7
+  weekly_backup_retention_days  = 35
+  monthly_backup_retention_days = 365
 }
 EOF
 

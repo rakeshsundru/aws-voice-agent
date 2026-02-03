@@ -43,7 +43,7 @@ variable "connect_instance_id" {
 }
 
 variable "dlq_arns" {
-  description = "Map of DLQ names to queue names"
+  description = "Map of DLQ names to queue ARNs for monitoring"
   type        = map(string)
   default     = {}
 }
