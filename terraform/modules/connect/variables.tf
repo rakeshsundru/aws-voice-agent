@@ -17,6 +17,12 @@ variable "instance_alias" {
   type        = string
 }
 
+variable "existing_instance_id" {
+  description = "ID of existing Connect instance to use (if not creating a new one)"
+  type        = string
+  default     = null
+}
+
 variable "identity_management_type" {
   description = "Identity management type (CONNECT_MANAGED, SAML, or EXISTING_DIRECTORY)"
   type        = string

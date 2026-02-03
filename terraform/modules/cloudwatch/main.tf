@@ -316,7 +316,7 @@ resource "aws_cloudwatch_metric_alarm" "high_latency" {
   metric_name         = "Duration"
   namespace           = "AWS/Lambda"
   period              = 300
-  statistic           = "p95"
+  extended_statistic  = "p95"
   threshold           = var.alarms_config != null ? var.alarms_config.latency_threshold_ms : 2000
   alarm_description   = "High latency detected in voice agent"
   treat_missing_data  = "notBreaching"
@@ -386,12 +386,9 @@ resource "aws_cloudwatch_log_metric_filter" "error_count" {
 
   metric_transformation {
     name          = "ErrorCount"
-    namespace     = "VoiceAgent"
+    namespace     = "VoiceAgent/${var.environment}"
     value         = "1"
     default_value = "0"
-    dimensions = {
-      Environment = var.environment
-    }
   }
 }
 
@@ -402,12 +399,9 @@ resource "aws_cloudwatch_log_metric_filter" "cold_start" {
 
   metric_transformation {
     name          = "ColdStarts"
-    namespace     = "VoiceAgent"
+    namespace     = "VoiceAgent/${var.environment}"
     value         = "1"
     default_value = "0"
-    dimensions = {
-      Environment = var.environment
-    }
   }
 }
 
@@ -418,12 +412,9 @@ resource "aws_cloudwatch_log_metric_filter" "timeout" {
 
   metric_transformation {
     name          = "Timeouts"
-    namespace     = "VoiceAgent"
+    namespace     = "VoiceAgent/${var.environment}"
     value         = "1"
     default_value = "0"
-    dimensions = {
-      Environment = var.environment
-    }
   }
 }
 

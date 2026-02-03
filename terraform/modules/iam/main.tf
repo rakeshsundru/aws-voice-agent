@@ -111,7 +111,7 @@ resource "aws_iam_role_policy" "lambda_custom" {
           "kms:GenerateDataKeyWithoutPlaintext",
           "kms:DescribeKey"
         ]
-        Resource = var.kms_key_arns
+        Resource = values(var.kms_key_arns)
       },
       # CloudWatch Logs Access
       {
@@ -256,7 +256,7 @@ resource "aws_iam_role_policy" "connect" {
           "kms:Decrypt",
           "kms:GenerateDataKey"
         ]
-        Resource = var.kms_key_arns
+        Resource = values(var.kms_key_arns)
       },
       # Lambda Invocation
       {
@@ -355,7 +355,7 @@ resource "aws_iam_role_policy" "bedrock" {
           "kms:Decrypt",
           "kms:DescribeKey"
         ]
-        Resource = var.kms_key_arns
+        Resource = values(var.kms_key_arns)
       },
       # OpenSearch Serverless (for Knowledge Base)
       {
@@ -474,7 +474,7 @@ resource "aws_iam_role_policy" "transcribe" {
           "kms:Encrypt",
           "kms:GenerateDataKey"
         ]
-        Resource = var.kms_key_arns
+        Resource = values(var.kms_key_arns)
       }
     ]
   })

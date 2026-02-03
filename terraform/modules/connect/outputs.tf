@@ -4,17 +4,17 @@
 
 output "instance_id" {
   description = "ID of the Connect instance"
-  value       = aws_connect_instance.main.id
+  value       = local.instance_id
 }
 
 output "instance_arn" {
   description = "ARN of the Connect instance"
-  value       = aws_connect_instance.main.arn
+  value       = local.instance_arn
 }
 
 output "instance_alias" {
   description = "Alias of the Connect instance"
-  value       = aws_connect_instance.main.instance_alias
+  value       = local.create_instance ? aws_connect_instance.main[0].instance_alias : var.instance_alias
 }
 
 output "phone_number" {
@@ -74,10 +74,10 @@ output "hours_of_operation_arn" {
 
 output "service_role" {
   description = "Service role ARN for the Connect instance"
-  value       = aws_connect_instance.main.service_role
+  value       = local.create_instance ? aws_connect_instance.main[0].service_role : null
 }
 
 output "connect_url" {
   description = "URL of the Connect instance"
-  value       = "https://${aws_connect_instance.main.instance_alias}.my.connect.aws"
+  value       = local.create_instance ? "https://${aws_connect_instance.main[0].instance_alias}.my.connect.aws" : "https://${var.instance_alias}.my.connect.aws"
 }

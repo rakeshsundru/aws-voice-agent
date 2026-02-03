@@ -86,7 +86,7 @@ module "iam" {
   aws_region          = var.aws_region
   account_id          = data.aws_caller_identity.current.account_id
   kms_key_arns        = module.kms.key_arns
-  s3_bucket_arns      = module.s3.bucket_arns
+  s3_bucket_arns      = values(module.s3.bucket_arns)
   neptune_enabled     = var.neptune_config.enabled
   neptune_cluster_arn = var.neptune_config.enabled ? module.neptune[0].cluster_arn : ""
   common_tags         = local.common_tags
@@ -179,7 +179,8 @@ module "connect" {
 
   name_prefix              = local.name_prefix
   environment              = var.environment
-  instance_alias           = var.connect_config.instance_alias
+  instance_alias           = var.connect_config.instance_alias != null ? var.connect_config.instance_alias : "voice-agent-${var.environment}"
+  existing_instance_id     = var.connect_config.existing_instance_id
   identity_management_type = var.connect_config.identity_management_type
   inbound_calls_enabled    = var.connect_config.inbound_calls_enabled
   outbound_calls_enabled   = var.connect_config.outbound_calls_enabled
@@ -295,4 +296,21 @@ module "neptune" {
   common_tags             = local.common_tags
 
   depends_on = [module.vpc, module.kms]
+}
+
+# -----------------------------------------------------------------------------
+# CloudTrail Module - Audit logging (Optional)
+# -----------------------------------------------------------------------------
+
+module "cloudtrail" {
+  source = "./modules/cloudtrail"
+  count  = var.security_config.enable_cloudtrail ? 1 : 0
+
+  name_prefix        = local.name_prefix
+  environment        = var.environment
+  random_suffix      = random_id.suffix.hex
+  log_retention_days = var.cloudwatch_config.log_retention_days
+  multi_region       = false
+  force_destroy      = var.s3_config.force_destroy
+  common_tags        = local.common_tags
 }

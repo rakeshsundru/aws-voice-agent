@@ -1,264 +1,712 @@
 # AWS Voice Agent
 
-A production-grade, AWS-native voice agent system built with Amazon Connect, Bedrock (Claude), Transcribe, Polly, and Neptune.
+> A production-ready, AI-powered phone system that lets callers have natural conversations instead of pressing buttons.
 
-## Overview
+---
 
-This project provides a complete, end-to-end voice agent solution that can be deployed to any AWS environment via configuration. It replaces traditional IVR systems with an AI-powered conversational agent that can handle natural language interactions over the phone.
+## What Is This?
 
-### Key Features
+This repository contains everything you need to deploy an **intelligent voice agent** on AWS. When someone calls your phone number, instead of hearing "Press 1 for sales, press 2 for support...", they can simply speak naturally:
 
-- **Natural Conversation**: Powered by Claude 3.5 Sonnet via Amazon Bedrock for intelligent, context-aware responses
-- **Real-time Processing**: Sub-2-second latency for natural conversation flow
-- **Memory & Context**: Neptune graph database for conversation history and caller profiles
-- **Security-First**: HIPAA-ready architecture with encryption, PII redaction, and audit trails
-- **Fully Configurable**: Deploy to any environment by updating a single config file
-- **Production-Ready**: Comprehensive monitoring, alerting, and error handling
+- **Caller**: "Hi, I'd like to schedule an appointment for next Tuesday"
+- **Agent**: "Of course! I can help you with that. What time works best for you?"
 
-## Architecture
+### How It Works
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         Amazon Connect                               │
-│                    (Telephony + Contact Flows)                       │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Lambda Orchestrator                             │
-│              (Session Management + Business Logic)                   │
-└──────┬─────────────────────┼─────────────────────┬──────────────────┘
-       │                     │                     │
-       ▼                     ▼                     ▼
-┌─────────────┐     ┌─────────────────┐     ┌─────────────┐
-│  Transcribe │     │     Bedrock     │     │    Polly    │
-│   (STT)     │     │ (Claude 3.5)   │     │    (TTS)    │
-└─────────────┘     └─────────────────┘     └─────────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │    Neptune      │
-                    │ (Graph Memory)  │
-                    └─────────────────┘
+    Customer calls your number
+              │
+              ▼
+    ┌─────────────────┐
+    │ Amazon Connect  │  ← Answers the phone
+    └────────┬────────┘
+             │
+             ▼
+    ┌─────────────────┐
+    │   Transcribe    │  ← Converts speech to text
+    └────────┬────────┘
+             │
+             ▼
+    ┌─────────────────┐
+    │ Lambda + Claude │  ← Understands intent, generates response
+    └────────┬────────┘
+             │
+             ▼
+    ┌─────────────────┐
+    │     Polly       │  ← Converts text back to speech
+    └────────┬────────┘
+             │
+             ▼
+    Customer hears the response
 ```
 
-## Quick Start
+### What You Get
 
-### Prerequisites
+After deployment, you will have:
+- A **working phone number** that answers calls with AI
+- A **CloudWatch dashboard** to monitor calls and performance
+- **Call recordings** stored in S3 for review
+- **Transcripts** of every conversation
+- **Customizable prompts** to control how the agent behaves
 
-- AWS Account with appropriate permissions
-- AWS CLI configured with credentials
-- Terraform >= 1.5
-- Python 3.11+
-- Git
+---
 
-### Installation
+## Prerequisites Checklist
 
-1. **Clone the repository**
+Before you begin, make sure you have **ALL** of the following. The deployment **will fail** if any are missing.
+
+### 1. AWS Account with Admin Access
+
+You need an AWS account where you have **administrator permissions** (or at minimum, permissions to create IAM roles, Lambda functions, S3 buckets, and Amazon Connect instances).
+
+**How to verify:**
+```bash
+# Run this command - it should show your account info, not an error
+aws sts get-caller-identity
+```
+
+**Expected output:**
+```json
+{
+    "UserId": "AIDAXXXXXXXXXXXXXXXXX",
+    "Account": "123456789012",
+    "Arn": "arn:aws:iam::123456789012:user/your-username"
+}
+```
+
+**If you see an error:** Your AWS credentials are not configured. See [AWS CLI Configuration](#aws-cli-configuration) below.
+
+---
+
+### 2. AWS CLI (version 2.x)
+
+The AWS Command Line Interface lets you interact with AWS from your terminal.
+
+**How to check if installed:**
+```bash
+aws --version
+```
+
+**Expected output (version 2.x required):**
+```
+aws-cli/2.15.0 Python/3.11.6 Darwin/23.0.0 source/arm64 prompt/off
+```
+
+**How to install (if not installed):**
+
+| Operating System | Installation Command |
+|-----------------|---------------------|
+| **macOS** | `brew install awscli` |
+| **Ubuntu/Debian** | `sudo apt-get install awscli` |
+| **Amazon Linux/RHEL** | `sudo yum install awscli` |
+| **Windows** | Download from [AWS CLI Installer](https://aws.amazon.com/cli/) |
+
+**After installing, configure your credentials:**
+```bash
+aws configure
+```
+
+You will be prompted for:
+```
+AWS Access Key ID [None]: YOUR_ACCESS_KEY_HERE
+AWS Secret Access Key [None]: YOUR_SECRET_KEY_HERE
+Default region name [None]: us-east-1
+Default output format [None]: json
+```
+
+> **Where do I get Access Keys?** Go to AWS Console → IAM → Users → Your User → Security Credentials → Create Access Key
+
+---
+
+### 3. Terraform (version 1.5.0 or higher)
+
+Terraform creates all the AWS infrastructure automatically.
+
+**How to check if installed:**
+```bash
+terraform --version
+```
+
+**Expected output:**
+```
+Terraform v1.7.0
+on darwin_arm64
+```
+
+**How to install (if not installed):**
+
+| Operating System | Installation Command |
+|-----------------|---------------------|
+| **macOS** | `brew install terraform` |
+| **Ubuntu/Debian** | See [Terraform Install Guide](https://developer.hashicorp.com/terraform/install) |
+| **Windows** | `choco install terraform` or download from HashiCorp |
+
+---
+
+### 4. Python (version 3.11 or higher)
+
+Python is required for the Lambda functions.
+
+**How to check if installed:**
+```bash
+python3 --version
+```
+
+**Expected output:**
+```
+Python 3.11.6
+```
+
+**How to install (if not installed):**
+
+| Operating System | Installation Command |
+|-----------------|---------------------|
+| **macOS** | `brew install python@3.11` |
+| **Ubuntu/Debian** | `sudo apt-get install python3.11 python3.11-venv` |
+| **Windows** | Download from [python.org](https://www.python.org/downloads/) |
+
+---
+
+### 5. pip (Python package manager)
+
+**How to check if installed:**
+```bash
+pip3 --version
+```
+
+**Expected output:**
+```
+pip 23.3.1 from /usr/local/lib/python3.11/site-packages/pip (python 3.11)
+```
+
+**How to install (if not installed):**
+```bash
+python3 -m ensurepip --upgrade
+```
+
+---
+
+### 6. Git
+
+**How to check if installed:**
+```bash
+git --version
+```
+
+**Expected output:**
+```
+git version 2.42.0
+```
+
+**How to install (if not installed):**
+
+| Operating System | Installation Command |
+|-----------------|---------------------|
+| **macOS** | `xcode-select --install` |
+| **Ubuntu/Debian** | `sudo apt-get install git` |
+| **Windows** | Download from [git-scm.com](https://git-scm.com/download/win) |
+
+---
+
+### Prerequisites Verification Script
+
+Run this to check everything at once:
+
+```bash
+echo "=== Checking Prerequisites ==="
+echo ""
+echo "1. AWS CLI:"
+aws --version 2>/dev/null || echo "   ❌ NOT INSTALLED"
+echo ""
+echo "2. AWS Credentials:"
+aws sts get-caller-identity 2>/dev/null && echo "   ✅ Configured" || echo "   ❌ NOT CONFIGURED"
+echo ""
+echo "3. Terraform:"
+terraform --version 2>/dev/null | head -1 || echo "   ❌ NOT INSTALLED"
+echo ""
+echo "4. Python:"
+python3 --version 2>/dev/null || echo "   ❌ NOT INSTALLED"
+echo ""
+echo "5. pip:"
+pip3 --version 2>/dev/null || echo "   ❌ NOT INSTALLED"
+echo ""
+echo "6. Git:"
+git --version 2>/dev/null || echo "   ❌ NOT INSTALLED"
+echo ""
+echo "=== Check Complete ==="
+```
+
+**All items must show a version number (not "NOT INSTALLED") before proceeding.**
+
+---
+
+## Step-by-Step Deployment Guide
+
+Follow these steps **in order**. Do not skip any step.
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/your-org/aws-voice-agent.git
+```
+
+**Expected output:**
+```
+Cloning into 'aws-voice-agent'...
+remote: Enumerating objects: 100, done.
+remote: Counting objects: 100% (100/100), done.
+remote: Compressing objects: 100% (80/80), done.
+Receiving objects: 100% (100/100), 150.00 KiB | 2.00 MiB/s, done.
+Resolving deltas: 100% (20/20), done.
+```
+
+**Then enter the directory:**
+```bash
+cd aws-voice-agent
+```
+
+**Verify you're in the right place:**
+```bash
+ls -la
+```
+
+**You should see:**
+```
+drwxr-xr-x  config/
+drwxr-xr-x  terraform/
+drwxr-xr-x  lambda/
+drwxr-xr-x  bedrock/
+drwxr-xr-x  scripts/
+-rw-r--r--  README.md
+...
+```
+
+---
+
+### Step 2: Choose Your AWS Region
+
+**Important:** Amazon Connect and Bedrock are not available in all regions.
+
+**Supported regions for this project:**
+| Region | Location | Recommended |
+|--------|----------|-------------|
+| `us-east-1` | N. Virginia | ✅ Yes (most services available) |
+| `us-west-2` | Oregon | ✅ Yes |
+| `eu-west-2` | London | ⚠️ Limited Bedrock models |
+| `ap-southeast-2` | Sydney | ⚠️ Limited Bedrock models |
+
+**We recommend `us-east-1`** for the best experience.
+
+**Verify your AWS CLI is set to the correct region:**
+```bash
+aws configure get region
+```
+
+**If you need to change it:**
+```bash
+aws configure set region us-east-1
+```
+
+---
+
+### Step 3: Configure Your Deployment
+
+Open the configuration file for your environment:
+
+**For development/testing:**
+```bash
+# Using any text editor (nano, vim, VS Code, etc.)
+nano config/dev.yaml
+
+# Or with VS Code:
+code config/dev.yaml
+```
+
+**Key settings to customize:**
+
+```yaml
+# config/dev.yaml
+
+# REQUIRED: Change this to a unique name (lowercase, no spaces)
+connect:
+  instance_alias: my-company-voice-agent-dev  # ← Change "my-company" to your company
+
+# REQUIRED: Change this to your company name
+agent:
+  company_name: "My Company Name"  # ← This is what the agent will say
+
+# OPTIONAL: Customize the greeting
+  greeting_message: "Hello! Thank you for calling My Company. How can I help you today?"
+```
+
+**Save the file** (in nano: `Ctrl+O`, then `Enter`, then `Ctrl+X`)
+
+---
+
+### Step 4: Run the Setup Script
+
+This script validates your environment and prepares everything for deployment.
+
+```bash
+./scripts/setup.sh dev
+```
+
+**Expected output:**
+```
+========================================
+AWS Voice Agent Initial Setup
+========================================
+
+Checking prerequisites...
+✅ AWS CLI installed
+✅ Terraform installed
+✅ Python installed
+✅ AWS credentials configured
+
+Setting up Python environment...
+✅ Virtual environment created
+✅ Dependencies installed
+
+Checking AWS configuration...
+AWS Account: 123456789012
+AWS Region: us-east-1
+✅ AWS configuration verified
+
+Setting up configuration...
+✅ Configuration file exists
+✅ Terraform variables generated
+
+========================================
+Setup Complete!
+========================================
+
+Next steps:
+  ./scripts/deploy.sh dev
+```
+
+**If you see any ❌ errors, STOP and fix them before continuing.**
+
+---
+
+### Step 5: Deploy the Infrastructure
+
+This is the main deployment step. It will create all AWS resources.
+
+```bash
+./scripts/deploy.sh dev
+```
+
+**What happens during deployment:**
+
+1. **Lambda packages are created** (takes ~30 seconds)
+2. **Terraform initializes** (takes ~10 seconds)
+3. **Terraform plans the deployment** (takes ~30 seconds)
+4. **You will see a plan summary** like this:
+
+```
+Plan: 47 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value:
+```
+
+5. **Type `yes` and press Enter**
+
+6. **Resources are created** (takes 5-15 minutes)
+
+**Expected final output:**
+```
+Apply complete! Resources: 47 added, 0 changed, 0 destroyed.
+
+=========================================
+AWS Voice Agent Deployment Complete!
+=========================================
+
+Phone Number: +1-555-123-4567  ← YOUR NEW PHONE NUMBER
+
+To test your voice agent:
+1. Call the phone number above
+2. Speak your request
+3. The agent will respond
+
+Monitoring:
+- CloudWatch Dashboard: https://us-east-1.console.aws.amazon.com/cloudwatch/...
+
+S3 Buckets:
+- Recordings: s3://va-dev-recordings-a1b2c3d4
+- Transcripts: s3://va-dev-transcripts-a1b2c3d4
+```
+
+**Write down the phone number!** You'll need it to test.
+
+---
+
+### Step 6: Test Your Voice Agent
+
+**Call the phone number** shown in the deployment output.
+
+**What you should experience:**
+
+1. **The call connects** (1-2 rings)
+2. **You hear a greeting**: "Hello! Thank you for calling [Your Company]. How can I help you today?"
+3. **Speak naturally**: "I'd like to know your business hours"
+4. **The agent responds** with a relevant answer
+5. **Continue the conversation** or say "goodbye" to end
+
+**First call not working?** Wait 2-3 minutes after deployment for all services to initialize, then try again.
+
+---
+
+## Post-Deployment: What You Can Do
+
+### View Call Recordings
+
+```bash
+# List recent recordings
+aws s3 ls s3://va-dev-recordings-$(terraform -chdir=terraform output -raw random_suffix)/ --recursive
+```
+
+### View the Monitoring Dashboard
+
+1. Go to [AWS CloudWatch Console](https://console.aws.amazon.com/cloudwatch/)
+2. Click **Dashboards** in the left sidebar
+3. Click on **va-dev-voice-agent**
+
+### Check Lambda Logs
+
+```bash
+# View recent logs from the orchestrator function
+aws logs tail /aws/lambda/va-dev-orchestrator --follow
+```
+
+### View Transcripts
+
+```bash
+# List recent transcripts
+aws s3 ls s3://va-dev-transcripts-$(terraform -chdir=terraform output -raw random_suffix)/ --recursive
+```
+
+---
+
+## Customizing Your Voice Agent
+
+### Change What the Agent Says
+
+Edit the system prompt to change the agent's personality and behavior:
+
+```bash
+nano bedrock/prompts/voice_agent_system_prompt.txt
+```
+
+After editing, redeploy:
+```bash
+./scripts/deploy.sh dev
+```
+
+### Change the Greeting
+
+Edit `config/dev.yaml`:
+
+```yaml
+agent:
+  greeting_message: "Hi there! Welcome to Acme Corp. What can I do for you?"
+```
+
+Then redeploy:
+```bash
+./scripts/deploy.sh dev
+```
+
+### Add Custom Tools (Actions the Agent Can Take)
+
+Edit `bedrock/tools/tool_definitions.json` to add new capabilities like:
+- Looking up order status
+- Scheduling appointments
+- Transferring to specific departments
+
+---
+
+## Destroying the Deployment
+
+**Warning:** This will delete ALL resources including call recordings and transcripts.
+
+**To completely remove everything:**
+
+```bash
+./scripts/deploy.sh dev --destroy
+```
+
+**You will be asked to confirm:**
+```
+WARNING: This will destroy all resources in dev
+Are you sure you want to destroy? Type 'destroy' to confirm:
+```
+
+**Type `destroy` and press Enter.**
+
+---
+
+## Troubleshooting
+
+### "Error: Invalid AWS credentials"
+
+**Problem:** AWS CLI is not configured correctly.
+
+**Solution:**
+```bash
+aws configure
+# Enter your Access Key ID, Secret Access Key, and region
+```
+
+### "Error: Amazon Connect instance alias already exists"
+
+**Problem:** Someone else (or a previous deployment) already used this name.
+
+**Solution:** Edit `config/dev.yaml` and change `instance_alias` to something unique:
+```yaml
+connect:
+  instance_alias: my-unique-company-name-dev
+```
+
+### "The phone number is not answering"
+
+**Possible causes:**
+1. **Wait 2-3 minutes** after deployment for services to initialize
+2. **Check CloudWatch logs** for errors:
    ```bash
-   git clone https://github.com/your-org/aws-voice-agent.git
-   cd aws-voice-agent
+   aws logs tail /aws/lambda/va-dev-orchestrator --since 5m
+   ```
+3. **Verify the Lambda function deployed:**
+   ```bash
+   aws lambda get-function --function-name va-dev-orchestrator
    ```
 
-2. **Run initial setup**
-   ```bash
-   ./scripts/setup.sh dev
-   ```
+### "Error: Access Denied when creating resources"
 
-3. **Review and customize configuration**
-   ```bash
-   vim config/dev.yaml
-   ```
+**Problem:** Your AWS user doesn't have enough permissions.
 
-4. **Deploy**
-   ```bash
-   ./scripts/deploy.sh dev
-   ```
+**Solution:** You need administrator access or specific permissions for:
+- IAM (to create roles)
+- Lambda
+- S3
+- Amazon Connect
+- CloudWatch
+- KMS
+- VPC
 
-5. **Test with a phone call**
-   - Call the phone number shown in the deployment output
-   - Speak naturally and interact with the agent
+### "Terraform state lock error"
+
+**Problem:** A previous Terraform run didn't complete properly.
+
+**Solution:**
+```bash
+cd terraform
+terraform force-unlock LOCK_ID
+```
+
+(Replace `LOCK_ID` with the ID shown in the error message)
+
+---
+
+## Cost Estimate
+
+Running this voice agent costs approximately:
+
+| Component | Cost | Notes |
+|-----------|------|-------|
+| Amazon Connect | $0.018/minute | Only when calls are active |
+| Transcribe | $0.024/minute | Only when calls are active |
+| Bedrock (Claude) | ~$0.003/turn | Per conversation turn |
+| Polly | $0.016/1M chars | Very low cost |
+| Lambda | ~$0.20/million calls | Negligible |
+| S3 Storage | ~$0.023/GB/month | For recordings |
+| **Idle Cost** | **~$0/day** | No calls = minimal cost |
+| **Per Call (3 min avg)** | **~$0.15** | Approximate |
+
+**To minimize costs during testing:**
+- Use the `dev` configuration (smaller resources)
+- Delete the deployment when not in use: `./scripts/deploy.sh dev --destroy`
+
+---
 
 ## Project Structure
 
 ```
 aws-voice-agent/
-├── terraform/                 # Infrastructure as Code
-│   ├── modules/               # Reusable Terraform modules
-│   │   ├── connect/           # Amazon Connect
-│   │   ├── bedrock/           # Bedrock + Guardrails
-│   │   ├── lambda/            # Lambda functions
-│   │   ├── neptune/           # Graph database
-│   │   ├── s3/                # Storage buckets
-│   │   ├── cloudwatch/        # Monitoring
-│   │   ├── iam/               # IAM roles/policies
-│   │   ├── kms/               # Encryption keys
-│   │   └── vpc/               # Network infrastructure
-│   ├── environments/          # Environment-specific configs
-│   ├── main.tf                # Root module
-│   ├── variables.tf           # Input variables
-│   └── outputs.tf             # Output values
-├── lambda/                    # Lambda function code
-│   ├── orchestrator/          # Main orchestration logic
-│   ├── integrations/          # External API connectors
-│   └── utils/                 # Shared utilities
-├── bedrock/                   # Bedrock configuration
-│   ├── prompts/               # System prompts
-│   ├── guardrails/            # Safety configurations
-│   └── tools/                 # Tool definitions
-├── connect/                   # Connect configuration
-│   └── contact-flows/         # Contact flow definitions
-├── neptune/                   # Graph database schema
-│   ├── schema/                # Vertex/edge definitions
-│   └── queries/               # Common Gremlin queries
-├── monitoring/                # CloudWatch dashboards/alarms
+│
 ├── config/                    # Environment configurations
-├── scripts/                   # Deployment scripts
-├── tests/                     # Test suites
-└── docs/                      # Documentation
+│   ├── dev.yaml              # Development settings ← START HERE
+│   └── prod.yaml             # Production settings
+│
+├── terraform/                 # Infrastructure as Code
+│   ├── main.tf               # Main Terraform configuration
+│   ├── variables.tf          # Input variables
+│   ├── outputs.tf            # Output values
+│   └── modules/              # Reusable infrastructure modules
+│       ├── connect/          # Amazon Connect setup
+│       ├── lambda/           # Lambda functions
+│       ├── bedrock/          # AI/ML configuration
+│       ├── s3/               # Storage buckets
+│       ├── vpc/              # Network configuration
+│       ├── iam/              # Security roles
+│       ├── kms/              # Encryption keys
+│       └── cloudwatch/       # Monitoring
+│
+├── lambda/                    # Application code
+│   ├── orchestrator/         # Main voice agent logic
+│   │   ├── handler.py        # Entry point
+│   │   ├── bedrock_client.py # Claude AI integration
+│   │   └── session_manager.py# Conversation state
+│   └── integrations/         # External API connectors
+│
+├── bedrock/                   # AI configuration
+│   ├── prompts/              # What the agent says/does
+│   │   └── voice_agent_system_prompt.txt  ← CUSTOMIZE THIS
+│   ├── guardrails/           # Safety filters
+│   └── tools/                # Agent capabilities
+│       └── tool_definitions.json  ← ADD CUSTOM ACTIONS
+│
+├── connect/                   # Phone system configuration
+│   └── contact-flows/        # Call routing logic
+│
+└── scripts/                   # Deployment automation
+    ├── setup.sh              # Initial setup
+    └── deploy.sh             # Deploy/destroy infrastructure
 ```
 
-## Configuration
+---
 
-The system is fully configuration-driven. Each environment has a YAML config file:
+## Getting Help
 
-```yaml
-environment: prod
-aws_region: us-east-1
-project_name: voice-agent
+1. **Check the logs first:**
+   ```bash
+   aws logs tail /aws/lambda/va-dev-orchestrator --since 10m
+   ```
 
-bedrock:
-  model_id: anthropic.claude-3-5-sonnet-20241022-v2:0
-  max_tokens: 2000
-  guardrails_enabled: true
+2. **Review CloudWatch dashboard** for errors and metrics
 
-connect:
-  instance_alias: voice-agent-prod
-  claim_phone_number: true
-  phone_number_type: TOLL_FREE
+3. **Open an issue** on GitHub with:
+   - The exact error message
+   - Which step you were on
+   - Your AWS region
+   - Output of `terraform --version` and `aws --version`
 
-neptune:
-  enabled: true
-  instance_class: db.r5.large
+---
 
-agent:
-  company_name: "ACME Corporation"
-  greeting_message: "Hello! How can I help you today?"
-```
+## Quick Reference
 
-See `config/dev.yaml` for a complete example.
+| Action | Command |
+|--------|---------|
+| Initial setup | `./scripts/setup.sh dev` |
+| Deploy | `./scripts/deploy.sh dev` |
+| Deploy without prompts | `./scripts/deploy.sh dev --auto-approve` |
+| Destroy everything | `./scripts/deploy.sh dev --destroy` |
+| View logs | `aws logs tail /aws/lambda/va-dev-orchestrator --follow` |
+| Check deployment status | `cd terraform && terraform output` |
 
-## Deployment
+---
 
-### Deploy to Development
-```bash
-./scripts/deploy.sh dev
-```
-
-### Deploy to Production
-```bash
-./scripts/deploy.sh prod --auto-approve
-```
-
-### Destroy Environment
-```bash
-./scripts/deploy.sh dev --destroy
-```
-
-## Monitoring
-
-The deployment creates a CloudWatch dashboard with:
-- Lambda invocations and errors
-- Bedrock latency and token usage
-- Connect call metrics
-- End-to-end latency tracking
-
-Access the dashboard at:
-```
-https://<region>.console.aws.amazon.com/cloudwatch/home?region=<region>#dashboards:name=<prefix>-voice-agent
-```
-
-## Security
-
-This system is designed with HIPAA compliance in mind:
-
-- **Encryption at Rest**: All data encrypted with KMS (S3, Neptune, CloudWatch Logs)
-- **Encryption in Transit**: TLS 1.2+ for all communications
-- **PII Redaction**: Automatic redaction of sensitive information
-- **Audit Logging**: CloudTrail enabled for all API calls
-- **Least Privilege**: Fine-grained IAM roles for each service
-- **Network Isolation**: VPC with private subnets and VPC endpoints
-
-## Customization
-
-### Adding New Tools
-
-1. Define the tool in `bedrock/tools/tool_definitions.json`
-2. Implement the handler in `lambda/orchestrator/handler.py`
-3. Test the integration
-4. Deploy
-
-### Modifying Prompts
-
-Edit the prompts in `bedrock/prompts/`:
-- `voice_agent_system_prompt.txt` - Main agent behavior
-- `greeting_prompt.txt` - Initial greeting
-- `fallback_prompt.txt` - Error handling
-
-### Adding Integrations
-
-1. Create a connector in `lambda/integrations/`
-2. Add the API configuration to your environment config
-3. Deploy the changes
-
-## Testing
-
-```bash
-# Run unit tests
-pytest tests/unit/
-
-# Run integration tests
-pytest tests/integration/
-
-# Run load tests
-./tests/load/run_load_test.sh
-```
-
-## Cost Optimization
-
-Estimated costs per 1,000 calls (assuming 3-minute average duration):
-
-| Service | Estimated Cost |
-|---------|---------------|
-| Connect | $0.018/min |
-| Transcribe | $0.024/min |
-| Bedrock (Claude) | ~$0.03/call |
-| Polly | $0.016/1M chars |
-| Neptune | $0.10/hour (always on) |
-| **Total** | ~$0.15/call |
-
-Tips to reduce costs:
-- Use provisioned concurrency only in production
-- Enable Neptune only when memory features are needed
-- Use Glacier for long-term recording storage
-- Monitor and optimize prompt token usage
-
-## Troubleshooting
-
-See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for common issues and solutions.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For issues and feature requests, please use the GitHub issue tracker.
+**You're ready to deploy!** Start with [Step 1: Clone the Repository](#step-1-clone-the-repository).
