@@ -95,3 +95,27 @@ output "alarm_arns" {
     throttles = aws_cloudwatch_metric_alarm.orchestrator_throttles.arn
   }
 }
+
+output "dlq_arns" {
+  description = "Map of Dead Letter Queue ARNs"
+  value = var.enable_dlq ? {
+    orchestrator = aws_sqs_queue.orchestrator_dlq[0].arn
+    integration  = aws_sqs_queue.integration_dlq[0].arn
+  } : {}
+}
+
+output "dlq_urls" {
+  description = "Map of Dead Letter Queue URLs"
+  value = var.enable_dlq ? {
+    orchestrator = aws_sqs_queue.orchestrator_dlq[0].url
+    integration  = aws_sqs_queue.integration_dlq[0].url
+  } : {}
+}
+
+output "dlq_names" {
+  description = "Map of Dead Letter Queue names"
+  value = var.enable_dlq ? {
+    orchestrator = aws_sqs_queue.orchestrator_dlq[0].name
+    integration  = aws_sqs_queue.integration_dlq[0].name
+  } : {}
+}
