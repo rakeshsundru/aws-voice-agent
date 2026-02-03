@@ -124,3 +124,30 @@ common_tags = {
   Owner   = "rakesh@insidata.ai"
   Purpose = "Voice Agent Demo"
 }
+
+# Production Readiness Configuration
+production_config = {
+  # Alerting
+  enable_alerting              = true
+  alert_email                  = "rakesh@insidata.ai"
+  lambda_duration_threshold_ms = 10000
+  lambda_concurrency_threshold = 50
+  enable_anomaly_detection     = true
+  monthly_budget_usd           = 500  # Alert at 80% of $500
+
+  # Security Services
+  enable_security_services = true
+  enable_vpc_flow_logs     = true
+  enable_guardduty         = true
+  enable_security_hub      = true
+  enable_aws_config        = true
+
+  # Secrets Manager
+  enable_secrets_manager = true
+
+  # Backup
+  enable_backup                 = true
+  daily_backup_retention_days   = 7
+  weekly_backup_retention_days  = 35
+  monthly_backup_retention_days = 365
+}

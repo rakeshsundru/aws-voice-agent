@@ -33,6 +33,38 @@ locals {
 }
 
 # -----------------------------------------------------------------------------
+# Dead Letter Queues for Failed Invocations
+# -----------------------------------------------------------------------------
+
+resource "aws_sqs_queue" "orchestrator_dlq" {
+  count = var.enable_dlq ? 1 : 0
+
+  name                       = "${var.name_prefix}-orchestrator-dlq"
+  message_retention_seconds  = 1209600  # 14 days
+  visibility_timeout_seconds = 300
+  kms_master_key_id          = var.kms_key_arn
+
+  tags = merge(var.common_tags, {
+    Name     = "${var.name_prefix}-orchestrator-dlq"
+    Function = "orchestrator"
+  })
+}
+
+resource "aws_sqs_queue" "integration_dlq" {
+  count = var.enable_dlq ? 1 : 0
+
+  name                       = "${var.name_prefix}-integration-dlq"
+  message_retention_seconds  = 1209600  # 14 days
+  visibility_timeout_seconds = 300
+  kms_master_key_id          = var.kms_key_arn
+
+  tags = merge(var.common_tags, {
+    Name     = "${var.name_prefix}-integration-dlq"
+    Function = "integration"
+  })
+}
+
+# -----------------------------------------------------------------------------
 # Lambda Layer for Common Dependencies
 # -----------------------------------------------------------------------------
 
@@ -84,6 +116,13 @@ resource "aws_lambda_function" "orchestrator" {
 
   tracing_config {
     mode = "Active"
+  }
+
+  dynamic "dead_letter_config" {
+    for_each = var.enable_dlq ? [1] : []
+    content {
+      target_arn = aws_sqs_queue.orchestrator_dlq[0].arn
+    }
   }
 
   layers = concat(
@@ -161,6 +200,13 @@ resource "aws_lambda_function" "integration" {
 
   tracing_config {
     mode = "Active"
+  }
+
+  dynamic "dead_letter_config" {
+    for_each = var.enable_dlq ? [1] : []
+    content {
+      target_arn = aws_sqs_queue.integration_dlq[0].arn
+    }
   }
 
   layers = concat(

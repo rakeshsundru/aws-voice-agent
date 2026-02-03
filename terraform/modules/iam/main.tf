@@ -174,6 +174,16 @@ resource "aws_iam_role_policy" "lambda_custom" {
           "connect:StopContactStreaming"
         ]
         Resource = "*"
+      },
+      # SQS Access for Dead Letter Queues
+      {
+        Sid    = "SQSDeadLetterQueue"
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = "arn:aws:sqs:${var.aws_region}:${var.account_id}:${var.name_prefix}*-dlq"
       }
     ]
   })
