@@ -1,0 +1,181 @@
+{
+  "tools": [
+    {
+      "name": "search_knowledge_base",
+      "description": "Search the company knowledge base for information to answer customer questions. Use this when you need to look up specific information about products, services, policies, or procedures.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The search query based on the customer's question. Be specific and include relevant keywords."
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "lookup_account",
+      "description": "Look up customer account information by account ID, phone number, or email. Use this when the customer asks about their account status, balance, or history.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "The customer account ID, phone number, or email address to look up"
+          },
+          "lookup_type": {
+            "type": "string",
+            "description": "Type of information to retrieve",
+            "enum": ["status", "balance", "history", "details", "all"]
+          }
+        },
+        "required": ["account_id"]
+      }
+    },
+    {
+      "name": "schedule_appointment",
+      "description": "Schedule an appointment for the customer. Use this when the customer wants to book a meeting, consultation, or service appointment.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Appointment date in YYYY-MM-DD format"
+          },
+          "time": {
+            "type": "string",
+            "description": "Appointment time in HH:MM format (24-hour)"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of appointment",
+            "enum": ["consultation", "service", "followup", "general"]
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes or special requests for the appointment"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "description": "Expected duration of the appointment in minutes"
+          }
+        },
+        "required": ["date", "time", "type"]
+      }
+    },
+    {
+      "name": "check_availability",
+      "description": "Check available appointment slots for a given date. Use this before scheduling to find open times.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Date to check availability for in YYYY-MM-DD format"
+          },
+          "appointment_type": {
+            "type": "string",
+            "description": "Type of appointment to check availability for",
+            "enum": ["consultation", "service", "followup", "general"]
+          }
+        },
+        "required": ["date"]
+      }
+    },
+    {
+      "name": "cancel_appointment",
+      "description": "Cancel an existing appointment. Use this when the customer wants to cancel a previously scheduled appointment.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "description": "The appointment ID to cancel"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for cancellation"
+          }
+        },
+        "required": ["appointment_id"]
+      }
+    },
+    {
+      "name": "create_ticket",
+      "description": "Create a support ticket for issues that need follow-up. Use this when the customer has a problem that cannot be resolved immediately.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Brief description of the issue"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the problem"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Ticket priority level",
+            "enum": ["low", "normal", "high", "urgent"]
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the issue",
+            "enum": ["billing", "technical", "account", "general", "feedback"]
+          }
+        },
+        "required": ["subject", "description"]
+      }
+    },
+    {
+      "name": "transfer_to_agent",
+      "description": "Transfer the call to a human agent. Use this when you cannot help with the request, the customer explicitly asks for a human, or the issue is too complex.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": "string",
+            "description": "Which department to transfer to",
+            "enum": ["sales", "support", "billing", "technical", "general"]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the transfer - this will be shared with the receiving agent"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Priority of the transfer",
+            "enum": ["normal", "high"]
+          }
+        },
+        "required": ["department", "reason"]
+      }
+    },
+    {
+      "name": "send_followup",
+      "description": "Send follow-up information to the customer via SMS or email. Use this when the customer needs written confirmation or additional information.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "How to send the follow-up",
+            "enum": ["sms", "email"]
+          },
+          "content_type": {
+            "type": "string",
+            "description": "Type of content to send",
+            "enum": ["confirmation", "summary", "information", "link"]
+          },
+          "message": {
+            "type": "string",
+            "description": "Custom message or additional context"
+          }
+        },
+        "required": ["channel", "content_type"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,224 @@
+# =============================================================================
+# AWS Voice Agent - Production Environment Configuration
+# =============================================================================
+
+environment: prod
+aws_region: us-east-1
+project_name: voice-agent
+resource_prefix: va-prod
+
+# -----------------------------------------------------------------------------
+# Bedrock Configuration
+# -----------------------------------------------------------------------------
+bedrock:
+  model_id: anthropic.claude-3-5-sonnet-20241022-v2:0
+  max_tokens: 2000
+  temperature: 0.7
+  guardrails_enabled: true
+  streaming_enabled: true
+  knowledge_base:
+    enabled: true
+    embedding_model: amazon.titan-embed-text-v1
+    chunking_strategy: FIXED_SIZE
+    chunk_size: 512
+    chunk_overlap: 20
+
+# -----------------------------------------------------------------------------
+# Connect Configuration
+# -----------------------------------------------------------------------------
+connect:
+  instance_alias: voice-agent-prod
+  identity_management_type: CONNECT_MANAGED
+  inbound_calls_enabled: true
+  outbound_calls_enabled: true
+  claim_phone_number: true
+  phone_number_type: TOLL_FREE
+  phone_number_country: US
+  contact_flow_logs: true
+  hours_of_operation:
+    name: prod-hours
+    time_zone: America/New_York
+    config:
+      - day: MONDAY
+        start_time: "08:00"
+        end_time: "20:00"
+      - day: TUESDAY
+        start_time: "08:00"
+        end_time: "20:00"
+      - day: WEDNESDAY
+        start_time: "08:00"
+        end_time: "20:00"
+      - day: THURSDAY
+        start_time: "08:00"
+        end_time: "20:00"
+      - day: FRIDAY
+        start_time: "08:00"
+        end_time: "20:00"
+      - day: SATURDAY
+        start_time: "09:00"
+        end_time: "17:00"
+      - day: SUNDAY
+        start_time: "10:00"
+        end_time: "16:00"
+
+# -----------------------------------------------------------------------------
+# Neptune Configuration (Phase 2)
+# -----------------------------------------------------------------------------
+neptune:
+  enabled: true
+  instance_class: db.r5.large
+  cluster_size: 2
+  backup_retention_days: 7
+  preferred_backup_window: "03:00-04:00"
+  engine_version: "1.2.1.0"
+  port: 8182
+  iam_authentication: true
+  deletion_protection: true
+
+# -----------------------------------------------------------------------------
+# Transcribe Configuration
+# -----------------------------------------------------------------------------
+transcribe:
+  language_code: en-US
+  media_sample_rate: 8000
+  media_encoding: pcm
+  enable_partial_results: true
+  pii_entity_types:
+    - ALL
+  content_redaction_type: PII
+  content_redaction_output: redacted
+
+# -----------------------------------------------------------------------------
+# Lex Configuration
+# -----------------------------------------------------------------------------
+lex:
+  enabled: true
+  description: Voice Agent Intent Recognition Bot
+  idle_session_ttl: 300
+  data_privacy:
+    child_directed: false
+
+# -----------------------------------------------------------------------------
+# Polly Configuration
+# -----------------------------------------------------------------------------
+polly:
+  voice_id: Joanna
+  engine: neural
+  language_code: en-US
+  output_format: pcm
+  sample_rate: "8000"
+
+# -----------------------------------------------------------------------------
+# Lambda Configuration
+# -----------------------------------------------------------------------------
+lambda:
+  runtime: python3.11
+  memory_size: 1024
+  timeout: 30
+  reserved_concurrency: 100
+  provisioned_concurrency: 10
+  log_retention_days: 90
+  environment_variables:
+    LOG_LEVEL: INFO
+
+# -----------------------------------------------------------------------------
+# S3 Configuration
+# -----------------------------------------------------------------------------
+s3:
+  recordings_retention_days: 365
+  transcripts_retention_days: 730
+  artifacts_retention_days: 730
+  enable_versioning: true
+  enable_access_logging: true
+  block_public_access: true
+  force_destroy: false
+
+# -----------------------------------------------------------------------------
+# CloudWatch Configuration
+# -----------------------------------------------------------------------------
+cloudwatch:
+  log_retention_days: 90
+  enable_detailed_monitoring: true
+  enable_contributor_insights: true
+  dashboard_enabled: true
+  alarms:
+    latency_threshold_ms: 2000
+    error_rate_threshold_percent: 2
+    concurrent_calls_threshold: 100
+    lambda_errors_threshold: 5
+    lambda_duration_threshold_ms: 10000
+    cost_alert_threshold_usd: 5000
+
+# -----------------------------------------------------------------------------
+# Security Configuration
+# -----------------------------------------------------------------------------
+security:
+  enable_encryption_at_rest: true
+  enable_encryption_in_transit: true
+  kms_key_deletion_window: 30
+  enable_vpc_endpoints: true
+  enable_cloudtrail: true
+  enable_config: true
+
+# -----------------------------------------------------------------------------
+# VPC Configuration
+# -----------------------------------------------------------------------------
+vpc:
+  create_new: true
+  cidr_block: "10.0.0.0/16"
+  availability_zones: []
+  private_subnets:
+    - "10.0.1.0/24"
+    - "10.0.2.0/24"
+    - "10.0.3.0/24"
+  public_subnets:
+    - "10.0.101.0/24"
+    - "10.0.102.0/24"
+    - "10.0.103.0/24"
+  enable_nat_gateway: true
+  single_nat_gateway: false
+
+# -----------------------------------------------------------------------------
+# Agent Configuration
+# -----------------------------------------------------------------------------
+agent:
+  company_name: "ACME Corporation"
+  greeting_message: "Hello! Thank you for calling ACME Corporation. How can I help you today?"
+  fallback_message: "I didn't quite understand that. Could you please rephrase your question?"
+  transfer_message: "I'll transfer you to one of our specialists who can better assist you."
+  goodbye_message: "Thank you for calling ACME Corporation. Have a wonderful day!"
+  max_conversation_turns: 50
+  silence_timeout_seconds: 10
+  max_call_duration_seconds: 1800
+  enable_call_recording: true
+  enable_transcription: true
+
+# -----------------------------------------------------------------------------
+# Integration Configuration
+# -----------------------------------------------------------------------------
+integration:
+  crm:
+    enabled: true
+    endpoint_url: https://crm.example.com/api/v1
+    api_key_ssm: /voice-agent/prod/crm-api-key
+    timeout_ms: 5000
+  webhook:
+    enabled: true
+    endpoint_url: https://webhook.example.com/voice-agent
+    secret_ssm: /voice-agent/prod/webhook-secret
+  sms:
+    enabled: true
+    pinpoint_app: voice-agent-pinpoint
+    sender_id: ACME
+
+# -----------------------------------------------------------------------------
+# Tags
+# -----------------------------------------------------------------------------
+tags:
+  Environment: prod
+  Project: voice-agent
+  ManagedBy: terraform
+  CostCenter: engineering
+  Owner: platform-team
+  Compliance: HIPAA
+  DataClassification: Confidential

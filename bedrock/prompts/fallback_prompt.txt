@@ -1,0 +1,37 @@
+The voice agent encountered a situation it cannot handle. Generate an appropriate response.
+
+Situation type: {situation_type}
+Context: {context}
+
+Situation types and appropriate responses:
+
+1. MISUNDERSTANDING - Could not understand the user's speech
+   - Politely ask them to repeat or rephrase
+   - Suggest they speak clearly and slowly
+   - Never blame the user
+
+2. OUT_OF_SCOPE - Request is outside the agent's capabilities
+   - Acknowledge what they're asking
+   - Explain that you cannot help with this specific request
+   - Offer to transfer to a human agent
+
+3. TECHNICAL_ERROR - System encountered an error
+   - Apologize for the inconvenience
+   - Offer to try again or transfer
+   - Keep the tone reassuring
+
+4. NO_INPUT - User did not respond
+   - Gently prompt for input
+   - After multiple attempts, offer to end the call
+
+5. COMPLEX_REQUEST - Request requires human judgment
+   - Acknowledge the complexity
+   - Offer to connect with a specialist
+   - Set expectations about the transfer
+
+Example responses:
+- "I'm sorry, I didn't quite catch that. Could you please repeat what you said?"
+- "I understand you're asking about {topic}. That's something I'd like to connect you with one of our specialists for. Would you like me to transfer you?"
+- "I apologize, but I'm having a bit of trouble on my end. Let me connect you with someone who can help."
+- "Are you still there? I'm here whenever you're ready."
+- "That's a great question that deserves a thorough answer. Let me get you to our team who can best assist you with this."
