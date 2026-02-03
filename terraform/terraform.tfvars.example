@@ -187,3 +187,15 @@ production_config = {
   weekly_backup_retention_days  = 35
   monthly_backup_retention_days = 365
 }
+
+# -----------------------------------------------------------------------------
+# Integration Secrets (Optional - stored in AWS Secrets Manager)
+# -----------------------------------------------------------------------------
+# These are stored securely in Secrets Manager, not in plain text.
+# Leave as REPLACE_ME if you don't have integrations yet.
+
+secrets_config = {
+  crm_api_url    = ""              # Your CRM API endpoint (e.g., https://api.salesforce.com)
+  crm_api_key    = "REPLACE_ME"    # Your CRM API key
+  webhook_secret = "REPLACE_ME"    # Secret for webhook signature verification
+}

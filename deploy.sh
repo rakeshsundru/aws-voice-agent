@@ -289,6 +289,25 @@ collect_project_config() {
     read -p "Monthly budget alert (USD, 0 to disable) [500]: " monthly_budget
     MONTHLY_BUDGET="${monthly_budget:-500}"
 
+    # Optional Integrations
+    echo ""
+    print_info "Optional Integrations (press Enter to skip)"
+
+    read -p "CRM API URL (leave empty to skip): " crm_url
+    CRM_API_URL="${crm_url:-}"
+
+    if [ -n "$CRM_API_URL" ]; then
+        read -sp "CRM API Key: " crm_key
+        echo ""
+        CRM_API_KEY="${crm_key:-REPLACE_ME}"
+    else
+        CRM_API_KEY="REPLACE_ME"
+    fi
+
+    read -sp "Webhook signing secret (leave empty to skip): " webhook_secret
+    echo ""
+    WEBHOOK_SECRET="${webhook_secret:-REPLACE_ME}"
+
     # Summary
     echo ""
     print_section "Configuration Summary"
@@ -524,6 +543,16 @@ production_config = {
   daily_backup_retention_days   = 7
   weekly_backup_retention_days  = 35
   monthly_backup_retention_days = 365
+}
+
+# -----------------------------------------------------------------------------
+# Integration Secrets (stored in AWS Secrets Manager)
+# -----------------------------------------------------------------------------
+
+secrets_config = {
+  crm_api_url     = "${CRM_API_URL}"
+  crm_api_key     = "${CRM_API_KEY}"
+  webhook_secret  = "${WEBHOOK_SECRET}"
 }
 EOF
 

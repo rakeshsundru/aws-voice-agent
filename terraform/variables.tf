@@ -357,3 +357,18 @@ variable "production_config" {
   })
   default = {}
 }
+
+# -----------------------------------------------------------------------------
+# Secrets Configuration (Integration API Keys)
+# -----------------------------------------------------------------------------
+
+variable "secrets_config" {
+  description = "Integration secrets stored in AWS Secrets Manager"
+  type = object({
+    crm_api_url    = optional(string, "")
+    crm_api_key    = optional(string, "REPLACE_ME")
+    webhook_secret = optional(string, "REPLACE_ME")
+  })
+  default   = {}
+  sensitive = true
+}

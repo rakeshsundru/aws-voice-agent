@@ -386,7 +386,13 @@ module "secrets" {
   neptune_endpoint    = var.neptune_config.enabled ? module.neptune[0].cluster_endpoint : ""
   neptune_port        = var.neptune_config.port
   lex_enabled         = var.lex_config.enabled
-  common_tags         = local.common_tags
+
+  # Integration secrets from user input
+  crm_api_url    = var.secrets_config.crm_api_url
+  crm_api_key    = var.secrets_config.crm_api_key
+  webhook_secret = var.secrets_config.webhook_secret
+
+  common_tags = local.common_tags
 
   depends_on = [module.kms]
 }
