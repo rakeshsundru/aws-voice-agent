@@ -4,27 +4,27 @@
 
 project_name = "voice-agent"
 environment  = "dev"
-aws_region   = "us-east-1"
+aws_region   = "us-west-2"
 
 # VPC Configuration
 vpc_config = {
   create_new         = true
   cidr_block         = "10.0.0.0/16"
-  availability_zones = ["us-east-1a", "us-east-1b"]
+  availability_zones = ["us-west-2a", "us-west-2b"]
   private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
   public_subnets     = ["10.0.101.0/24", "10.0.102.0/24"]
   enable_nat_gateway = true
   single_nat_gateway = true
 }
 
-# Amazon Connect Configuration - Using existing instance
+# Amazon Connect Configuration - Using existing Oregon instance
 connect_config = {
-  instance_alias           = "insidata-voice-agent"  # Alias of existing instance
-  existing_instance_id     = "86a0c9d5-97cd-4558-80f6-99389fdb2a34"  # Use existing Connect instance
+  instance_alias           = "ast-insidata"
+  existing_instance_id     = "76ac7536-5b83-44dd-8444-a08bbf9d9faf"  # Oregon Connect instance
   identity_management_type = "CONNECT_MANAGED"
   inbound_calls_enabled    = true
   outbound_calls_enabled   = true
-  claim_phone_number       = false  # Claim manually in AWS Console (quota limit reached)
+  claim_phone_number       = false  # Already have phone number in Oregon
   phone_number_type        = "DID"
   phone_number_country     = "US"
   contact_flow_logs        = true
